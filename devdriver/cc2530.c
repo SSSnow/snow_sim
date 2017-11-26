@@ -69,7 +69,7 @@ static void cc2530_usart1_init(void){
 		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	    GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	    USART_InitStructure.USART_BaudRate = 115200;
+	    USART_InitStructure.USART_BaudRate = 9600;
 	    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	    USART_InitStructure.USART_StopBits = USART_StopBits_1;
 	    USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -175,8 +175,7 @@ void cc2530_usart1_rx_irqhandle(uint8_t data){
 
 void USART1_IRQHandler(void){
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET){	
-		data = USART_ReceiveData(USART1)
-		//cc2530_usart1_rx_irqhandle(USART_ReceiveData(USART1));
+		cc2530_usart1_rx_irqhandle(USART_ReceiveData(USART1));
 	}
 }
 
