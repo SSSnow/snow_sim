@@ -10,7 +10,10 @@ NJZY_REC_STR cc2530_rec ={0};
 NJZY_RF_STR cc2530_remote_rec_packet = {0};
 static uint8_t cc2530_rec_data_flag = 0;
 uint8_t *USART1_DMA_TX_Buf;
-uint8_t cc2530UartDmaTxFlag = 0;
+uint8_t USART1_DMA_RX_Buf0[64];
+uint8_t USART1_DMA_RX_Buf1[64];
+uint8_t using_buf0=0;
+uint8_t using_buf1=1;
 
 static DEV cc2530 = {
 		.name = "CC2530",
@@ -56,10 +59,11 @@ static void cc2530_usart1_init(void){
 		GPIO_InitTypeDef GPIO_InitStructure;
 		USART_InitTypeDef USART_InitStructure;
 		NVIC_InitTypeDef NVIC_InitStructure;
-		//DMA_InitTypeDef DMA_InitStructure;
+		DMA_InitTypeDef DMA_InitStructure;
 
 		RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1|RCC_APB2Periph_GPIOA, ENABLE);
-
+		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+		
 		GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
 		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
@@ -78,11 +82,34 @@ static void cc2530_usart1_init(void){
 	    USART_Init(USART1, &USART_InitStructure);
 	    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 	    USART_Cmd(USART1, ENABLE);
+		
+		DMA_DeInit(DMA1_Channel5);
+		DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)(&USART1->DR);
+		DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)USART1_DMA_RX_Buf0;
+		DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
+		DMA_InitStructure.DMA_BufferSize = 64;
+		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+	    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+	    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+	    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+	    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+		DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+	    DMA_Init(DMA1_Channel5, &DMA_InitStructure);
+		DMA_ITConfig(DMA1_Channel5,DMA_IT_TC,ENABLE);
+		USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
+		DMA_Cmd(DMA1_Channel5,ENABLE);
+		
+		NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+		NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel5_IRQn;
+		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+		NVIC_Init(&NVIC_InitStructure);
 
-//	    USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
 //	    /* Enable USART1 DMA TX request */
 //	    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
-//	    DMA_DeInit(DMA1_Channel7);
+//	    DMA_DeInit(DMA1_Channel4);
 //	    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&USART1->DR);
 //	    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)USART1_DMA_TX_Buf;
 //	    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
@@ -94,7 +121,7 @@ static void cc2530_usart1_init(void){
 //	    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
 //	    DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
 //	    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-//	    DMA_Init(DMA1_Channel7, &DMA_InitStructure);
+//	    DMA_Init(DMA1_Channel4, &DMA_InitStructure);
 //	    DMA_ITConfig(DMA1_Channel7, DMA_IT_TC, ENABLE);
 
 //	    /* Enable USART1 DMA TX Finish Interrupt */
@@ -106,12 +133,12 @@ static void cc2530_usart1_init(void){
 
 	    /* Enable USART1 Interrupt */
 		
-		NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
-	    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
-	    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-        NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-        NVIC_Init(&NVIC_InitStructure);
+//		NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+//	    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
+//	    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+//        NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+//		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//        NVIC_Init(&NVIC_InitStructure);
 
 }
 
@@ -173,11 +200,11 @@ void cc2530_usart1_rx_irqhandle(uint8_t data){
 		}
 }
 
-void USART1_IRQHandler(void){
-	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET){	
-		cc2530_usart1_rx_irqhandle(USART_ReceiveData(USART1));
-	}
-}
+//void USART1_IRQHandler(void){
+//	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET){	
+//		cc2530_usart1_rx_irqhandle(USART_ReceiveData(USART1));
+//	}
+//}
 
 
 void cc2530_usart1_send_nbyte(unsigned char *pBuffer, unsigned int len){
@@ -188,6 +215,20 @@ void cc2530_usart1_send_nbyte(unsigned char *pBuffer, unsigned int len){
 	}
 }
 
+void DMA1_Channel5_IRQHandler()
+{
+    if(DMA_GetITStatus(DMA1_IT_TC5)){
+      if(using_buf0 ==0){
+		DMA1_Channel5->CMAR = (u32)USART1_DMA_RX_Buf0;
+        using_buf0 = 1;
+    }else{
+       DMA1_Channel5->CMAR = (u32)USART1_DMA_RX_Buf0;
+       using_buf0 = 0;
+    }
+    DMA_ClearITPendingBit(DMA1_IT_TC5);
+  }    
+}
+
 //void cc2530_usart1_send_nbyte(unsigned char *pBuffer, unsigned int len){
 //	while(cc2530UartDmaTxFlag == 0);
 //	cc2530UartDmaTxFlag = 0;
@@ -196,7 +237,7 @@ void cc2530_usart1_send_nbyte(unsigned char *pBuffer, unsigned int len){
 //	DMA_Cmd(DMA1_Channel7, ENABLE);
 //}
 
-//void DMA1_Channel7_IRQHandler(void){
+//void DMA1_Channel4_IRQHandler(void){
 //  if(DMA_GetITStatus(DMA1_IT_TC7)) {
 //    /* USART1 DMA transmit completed */
 //    DMA_ClearITPendingBit(DMA1_IT_TC7);
