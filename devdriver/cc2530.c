@@ -5,15 +5,16 @@
  *      Author: snow
  */
 #include "cc2530.h"
+#define RX_BUF_LEN 64
 static unsigned int cc2530ID = 0;
 NJZY_REC_STR cc2530_rec ={0};
 NJZY_RF_STR cc2530_remote_rec_packet = {0};
 static uint8_t cc2530_rec_data_flag = 0;
 uint8_t *USART1_DMA_TX_Buf;
-uint8_t USART1_DMA_RX_Buf0[64];
-uint8_t USART1_DMA_RX_Buf1[64];
+uint8_t USART1_DMA_RX_Buf0[RX_BUF_LEN];
+uint8_t USART1_DMA_RX_Buf1[RX_BUF_LEN];
 uint8_t using_buf0=0;
-uint8_t using_buf1=1;
+uint8_t using_buf1=0;
 
 static DEV cc2530 = {
 		.name = "CC2530",
@@ -39,6 +40,10 @@ static int cc2530_init(void){
 }
 
 static int cc2530_read(void* buffer, unsigned int len){
+	if(using_buf0)
+		while(cc2530_parse_packet(USART1_DMA_RX_Buf1));
+	else
+		while(cc2530_parse_packet(USART1_DMA_RX_Buf0));
 
 	if(cc2530_rec_data_flag == 1){
 		NJZY_RF_STR* pBuffer = buffer;
@@ -87,7 +92,7 @@ static void cc2530_usart1_init(void){
 		DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)(&USART1->DR);
 		DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)USART1_DMA_RX_Buf0;
 		DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
-		DMA_InitStructure.DMA_BufferSize = 64;
+		DMA_InitStructure.DMA_BufferSize = RX_BUF_LEN;
 		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
 	    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
 		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
@@ -141,7 +146,7 @@ static void cc2530_usart1_init(void){
 //        NVIC_Init(&NVIC_InitStructure);
 
 }
-
+/*
 void cc2530_usart1_rx_irqhandle(uint8_t data){
 	static uint8_t cc2530_step = 0;
 	static uint8_t cc2530_count = 0;
@@ -199,6 +204,7 @@ void cc2530_usart1_rx_irqhandle(uint8_t data){
 			break;
 		}
 }
+*/
 
 //void USART1_IRQHandler(void){
 //	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET){	
@@ -245,3 +251,95 @@ void DMA1_Channel5_IRQHandler()
 //    cc2530UartDmaTxFlag = 1;
 //  }
 //}
+NJZY_PARSE_PACKET parse_step = HEAD1;
+uint8_t cc2530_parse_packet(uint8_t *buf){
+	static uint8_t cc2530_count = 0;
+	static uint8_t buffer_count = 0;
+	switch(parse_step){
+		case HEAD1:
+			if(0x4E == buf[buffer_count]){ //'N'
+				cc2530_rec.h1 = 0x4E;
+				buffer_count++;
+				if(buffer_count > (RX_BUF_LEN-1)) return 0;
+				parse_step = HEAD2;
+			}else{
+				buffer_count++;
+				if(buffer_count > (RX_BUF_LEN-1)) return 0;
+			}
+			break;
+		case HEAD2:
+			if(0x59 == buf[buffer_count]){//'Y'
+				cc2530_rec.h2 = 0x59;
+				buffer_count++;
+				if(buffer_count > (RX_BUF_LEN-1)) {
+					parse_step = HEAD1;
+					return 0;
+				}
+				parse_step = LEN;
+			}else{
+				buffer_count++;
+				parse_step = HEAD1;
+				if(buffer_count > (RX_BUF_LEN-1)) return 0;
+			}
+			break;
+		case LEN:
+			if((buf[buffer_count] > 0) && (buf[buffer_count] < 32)){
+				cc2530_rec.len = buf[buffer_count];
+				buffer_count++;
+				if(buffer_count > (RX_BUF_LEN-1)) {
+					parse_step = HEAD1;
+					return 0;
+				}
+				parse_step = TYPE;
+			}else{
+				buffer_count++;
+				parse_step = HEAD1;
+				if(buffer_count > (RX_BUF_LEN-1))return 0; 
+			}
+			break;
+		case TYPE:
+			if(buf[buffer_count] == NJZY_PACKET_TYPE_CONTROL){
+				cc2530_rec.type = NJZY_PACKET_TYPE_CONTROL;
+				cc2530_count = 0;
+				buffer_count++;
+				if(buffer_count > (RX_BUF_LEN-1)) {
+					parse_step = HEAD1;
+					return 0;
+				}
+				parse_step = DATA;
+			}else{
+				buffer_count++;
+				parse_step = HEAD1;
+				if(buffer_count > (RX_BUF_LEN-1))return 0;
+			}
+			break;
+		case DATA:
+			cc2530_rec.buffer[cc2530_count] = buf[buffer_count];
+			cc2530_count++;
+			buffer_count++;
+			if(cc2530_count > 31){
+				parse_step = HEAD1;
+				cc2530_count = 0;
+				buffer_count = 0;
+				return 0;
+			}else if(cc2530_count == (cc2530_rec.len-1)){
+				//uint8_t crc = crcRfCal((unsigned char *)&cc2530_rec.len, cc2530_rec.len);
+				if(crcRfCal((unsigned char *)&cc2530_rec.len, cc2530_rec.len)  == cc2530_rec.buffer[cc2530_rec.len - 2]){{
+					cc2530_remote_rec_packet = *(NJZY_RF_STR*)(cc2530_rec.buffer);
+					cc2530_rec_data_flag = 1;
+				}
+				cc2530_count = 0;
+				buffer_count = 0;
+				parse_step = HEAD1;
+				return 0;
+				}
+			}
+			break;
+		default:
+			cc2530_count = 0;
+			buffer_count = 0;
+			parse_step = HEAD1;
+			return 0;
+		}
+		return 1;
+}

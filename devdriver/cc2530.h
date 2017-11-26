@@ -42,14 +42,21 @@ typedef enum{
 	NJZY_PACKET_TYPE_BIND = 0x02
 }NJZY_PACKET_TYPE;
 
+typedef enum{
+	HEAD1 = 0,
+	HEAD2,
+	LEN,
+	TYPE,
+	DATA
+}NJZY_PARSE_PACKET;
+
 uint8_t cc2530_getID(void);
 uint8_t cc2530_register(void);
 static int cc2530_init(void);
 static int cc2530_write(void* buffer, unsigned int len);
 static int cc2530_read(void* buffer, unsigned int len);
 static void cc2530_usart1_init(void);
-void cc2530_usart1_rx_irqhandle(uint8_t data);
+//void cc2530_usart1_rx_irqhandle(uint8_t data);
 void cc2530_usart1_send_nbyte(unsigned char *pBuffer, unsigned int len);
-void DMA1_Channel7_IRQHandler(void);
-
+uint8_t cc2530_parse_packet(uint8_t *buf);
 #endif /* SRC_DEVDRIVER_CC2530_H_ */
