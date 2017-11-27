@@ -7,7 +7,7 @@
 
 #include "pwm.h"
 
-//APB1 -> 36M
+//APB1 -> 72M
 void TIM3_PWM_Init(u16 arr,u16 psc)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;

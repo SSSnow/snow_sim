@@ -22,7 +22,7 @@ uint8_t bsp_init(void){
 	init(volt_register());
 	delay_ms(1);
 	
-	if(!init(icm20602_register())) deviceInitSta |= DEV_ERR_ICM20602;
+//	if(!init(icm20602_register())) deviceInitSta |= DEV_ERR_ICM20602;
 	delay_ms(1);
 //	
 //	if(!init(ms56xx_register())) deviceInitSta |= DEV_ERR_MS56xx;

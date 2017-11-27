@@ -65,7 +65,7 @@ void rf_relink(void)
 
 uint8_t rfIsLost(void)
 {
-	if(rfLostCount > 200)
+	if(rfLostCount > 2000)
 		return 1;
 	else
 		return 0;

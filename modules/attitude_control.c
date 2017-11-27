@@ -6,7 +6,6 @@
  */
 
 #include "attitude_control.h"
-#define DEBUG
 
 extern float IMU_P;
 extern float IMU_I;
@@ -63,26 +62,20 @@ void attitude_quat_cal(void){//1ms
 	curAccUnit = *get_acc_unit();
 	curGyroUnit = *get_gyro_unit();
 	
-	static unsigned int imuStableCount = 0;
-	//wait for imu attitude calculation stable
-	if(imuStableCount < 5000){
-		imuStableCount ++;
-		imuStableFlag = false;
-	}else{
-		imuStableFlag = true;
-	}
+//	static unsigned int imuStableCount = 0;
+//	//wait for imu attitude calculation stable
+//	if(imuStableCount < 5000){
+//		imuStableCount ++;
+//		imuStableFlag = false;
+//	}else{
+//		imuStableFlag = true;
+//	}
 
 	if(!get_fly_status()){ //disarmed state
-		if(!imuStableFlag){
-			IMU_P = 8.0f;
-			IMU_I = 0.f;
-		}else{
-			IMU_P = 5.0f;
-			IMU_I = 0.0f;
-		}
+		IMU_P = 10.0f;
+		IMU_I = 0.0f;
 	}else{//armed
-
-		IMU_P = 0.5f;
+		IMU_P = 0.8f;
 	}
 
 	sensfusion6UpdateQ(&curGyroUnit, &curAccUnit, 0.001, &imuQ_6Axie);
@@ -99,9 +92,9 @@ Quat *get_att_quat(void){
 }
 
 FLOAT_ACC* get_acc_lowPass(void){
-	acc_lowPass.accX = acc_lowPass.accX * 0.9f + get_acc_unit()->accX * 0.1;
-	acc_lowPass.accY = acc_lowPass.accY * 0.9f + get_acc_unit()->accY * 0.1;
-	acc_lowPass.accZ = acc_lowPass.accZ * 0.9f + get_acc_unit()->accZ * 0.1;
+	acc_lowPass.accX = acc_lowPass.accX * 0.9f + get_acc_unit()->accX * 0.1f;
+	acc_lowPass.accY = acc_lowPass.accY * 0.9f + get_acc_unit()->accY * 0.1f;
+	acc_lowPass.accZ = acc_lowPass.accZ * 0.9f + get_acc_unit()->accZ * 0.1f;
 	return &acc_lowPass;
 }
 
@@ -130,11 +123,10 @@ void attitude_angle_loop(void){//5ms
 	pid_loop(&pidRoll, errEur.Roll, 0);
 
 	if(!get_fly_status()){
-			pidPitch.I_sum = 0;
-			pidRoll.I_sum = 0;
-		}
+		pidPitch.I_sum = 0;
+		pidRoll.I_sum = 0;
+	}
 }
-#define Yaw_P_Gain 8.0f
 
 void attitude_rate_loop(void){ //1ms
 
@@ -148,10 +140,9 @@ Quat curQ = {0};
 bool IsFlipped(void){
 	static bool Flipped = false;
 	static int Flipped_count = 0;
-	EulerAngleToQuaternion1(&curEur, &curQ);
-	QuatToRotate(&curQ, &rotateAngle);
-	
-	if(rotateAngle.Z > 90){//Continuous 1s flipped
+	float z_axis = imuQ_6Axie.qw * imuQ_6Axie.qw - imuQ_6Axie.qx * imuQ_6Axie.qx \
+			- imuQ_6Axie.qy * imuQ_6Axie.qy + imuQ_6Axie.qz * imuQ_6Axie.qz;
+	if(z_axis < 0.f){//Continuous 1s flipped
 		Flipped_count ++;
 		if(Flipped_count < 2000){ //wait 2s to flipped
 			Flipped_count ++;
@@ -171,34 +162,34 @@ void pid_init(void)
 
 	//Pitch params
 	pidPitch.kp=6.0f;
-	pidPitch.kd=0.0f;
+	pidPitch.kd=0.12f;
 	pidPitch.ki=0.0f;
-	pidPitch.I_max=50;
+	pidPitch.I_max=20.f;
 	pidPitch.Dt =0.005f;
   //PitchRate params
-	pidPitchRate.kp=0.58f;
-	pidPitchRate.kd=0.0;
-	pidPitchRate.ki=0;
-	pidPitchRate.I_max=20.0f;
+	pidPitchRate.kp=2.2f;
+	pidPitchRate.kd=0.05f;
+	pidPitchRate.ki=0.f;
+	pidPitchRate.I_max=20.f;
 	pidPitchRate.Dt=0.001f;
   //Roll params
-	pidRoll.kp=8.80f;
+	pidRoll.kp=pidPitch.kp;
 	pidRoll.kd=pidPitch.kd;
 	pidRoll.ki=pidPitch.ki;
 	pidRoll.I_max=pidPitch.I_max;
 	pidRoll.Dt = pidPitch.Dt;
   //RollRate params
-	pidRollRate.kp=0.69f;
-	pidRollRate.kd=0.00f;
-	pidRollRate.ki=0.00f;
+	pidRollRate.kp=pidPitchRate.kp;
+	pidRollRate.kd=pidPitchRate.kd;
+	pidRollRate.ki=pidPitchRate.ki;
 	pidRollRate.I_max=pidPitchRate.I_max;
 	pidRollRate.Dt = pidPitchRate.Dt;
   //YawRate
-	pidYawRate.kp=15.0f;
-	pidYawRate.kd=0.0f;
-	pidYawRate.ki=0.01f;
+	pidYawRate.kp=25.0f;
+	pidYawRate.kd=0.001f;
+	pidYawRate.ki=0.00f;
 	pidYawRate.I_max=20.0f;
-	pidYawRate.Dt  =0.001f;
+	pidYawRate.Dt = 0.001f;
 
 	//TODO:add altitude params
 }
@@ -210,6 +201,7 @@ void task_1ms_int(void){
 	
 	static uint32_t count_ms = 0;  //32bit = 2^32 * e-3 >> flight time
 	static uint32_t control_ms = 0;
+	GPIO_ResetBits(GPIOA,GPIO_Pin_2);
 	count_ms ++;
 	if(count_ms > 4000000000) count_ms = 0;	
 
@@ -222,15 +214,10 @@ void task_1ms_int(void){
 	}
 
 	//6 axis mode and 3 axis mode
-#if defined(DEBUG) 
-	if(get_fly_status()|1){
-#else 
-	if(get_fly_status()){
-
-#endif	
+	//if(get_fly_status()){
 		control_ms ++;
 		if(control_ms == 4000000000) control_ms = 0;
-		//if(get_control_mode()->control_attitude_enable){
+		if(get_control_mode()->control_attitude_enable){
 			if(control_ms%5 == 0){
 				expEur.Pitch = get_control_val()->x * Angle_Pitch_Max;
 				expEur.Roll = get_control_val()->y * Angle_Roll_Max;
@@ -240,10 +227,10 @@ void task_1ms_int(void){
 				expRate.Pitch_rate = pidPitch.Output;
 				expRate.Roll_rate = pidRoll.Output;
 			}
-//		}else{
-//			expRate.Pitch_rate = get_control_val()->x * Rate_Pitch_Max;
-//			expRate.Roll_rate = get_control_val()->y * Rate_Roll_Max;
-//		}
+		}else{
+			expRate.Pitch_rate = get_control_val()->x * Rate_Pitch_Max;
+			expRate.Roll_rate = get_control_val()->y * Rate_Roll_Max;
+		}
 
 		expRate.Yaw_rate = get_control_val()->r * Rate_Yaw_Max;
 		attitude_rate_loop();
@@ -269,10 +256,10 @@ void task_1ms_int(void){
 		R_MotoOutput = (pidRollRate.Output/1000.0f) *PWM_RANGE;
 		Y_MotoOutput = (pidYawRate.Output/1000.0f)  *PWM_RANGE;
 
-		moto1PRYOutput = +P_MotoOutput  +R_MotoOutput -Y_MotoOutput;
-		moto2PRYOutput = -P_MotoOutput  +R_MotoOutput +Y_MotoOutput;
-		moto3PRYOutput = -P_MotoOutput  -R_MotoOutput -Y_MotoOutput;
-		moto4PRYOutput = +P_MotoOutput  -R_MotoOutput +Y_MotoOutput;
+		moto1PRYOutput = -P_MotoOutput  +R_MotoOutput +Y_MotoOutput;
+		moto2PRYOutput = +P_MotoOutput  -R_MotoOutput -Y_MotoOutput;
+		moto3PRYOutput = -P_MotoOutput  -R_MotoOutput +Y_MotoOutput;
+		moto4PRYOutput = +P_MotoOutput  +R_MotoOutput -Y_MotoOutput;
 
 		Motor1 = throttle + moto1PRYOutput;
 		Motor2 = throttle + moto2PRYOutput;
@@ -292,7 +279,8 @@ void task_1ms_int(void){
 			Motor4 = thr_attenuation + moto4PRYOutput;
 		}
 			moto_pwm_output(Motor1,Motor2,Motor3,Motor4,get_flipped_status());
-	}else{ // fly disable
+			
+	//}else{ // fly disable
 		control_ms = 0;
 		//clear integral
 		pidPitch.ki = 0;
@@ -305,6 +293,7 @@ void task_1ms_int(void){
 			moto_pwm_output(0.f,0.f,0.f,0.f,true);
 		else
 			moto_pwm_output(0.f,0.f,0.f,0.f,false);
-	}
+	//}
+	GPIO_SetBits(GPIOA,GPIO_Pin_2);
 }
 

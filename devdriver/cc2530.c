@@ -78,7 +78,7 @@ static void cc2530_usart1_init(void){
 		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	    GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	    USART_InitStructure.USART_BaudRate = 9600;
+	    USART_InitStructure.USART_BaudRate = 115200;
 	    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	    USART_InitStructure.USART_StopBits = USART_StopBits_1;
 	    USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -228,7 +228,7 @@ void DMA1_Channel5_IRQHandler()
 		DMA1_Channel5->CMAR = (u32)USART1_DMA_RX_Buf0;
         using_buf0 = 1;
     }else{
-       DMA1_Channel5->CMAR = (u32)USART1_DMA_RX_Buf0;
+       DMA1_Channel5->CMAR = (u32)USART1_DMA_RX_Buf1;
        using_buf0 = 0;
     }
     DMA_ClearITPendingBit(DMA1_IT_TC5);

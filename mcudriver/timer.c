@@ -13,7 +13,7 @@ void timer2_int_init(void){//1ms
 		RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
 		TIM_TimeBaseStructure.TIM_Period = 999;
-		TIM_TimeBaseStructure.TIM_Prescaler = 35;
+		TIM_TimeBaseStructure.TIM_Prescaler = 71;
 		TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 		TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 		TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;

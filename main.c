@@ -4,6 +4,17 @@
 #include "../mcudriver/timer.h"
 #include "attitude_control.h"
 
+void test_gpioa2_init(void){
+	
+	GPIO_InitTypeDef GPIO_InitStructure;
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_SetBits(GPIOA,GPIO_Pin_2);
+}
+
 int main(){
 	//RCC_Config();
 	SystemInit();
@@ -13,6 +24,7 @@ int main(){
 	uint8_t sensor_start_failed = 0;
 	delay_init();
 	DevInitSta = middleware_init();
+	test_gpioa2_init();
 	if((DevInitSta & DEV_ERR_ICM20602) != 0){
 		color = RED|BLUE;
 		sensors_init_failed(color,5);

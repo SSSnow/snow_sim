@@ -61,6 +61,7 @@ void handle_rc_data(void){
 	static int armed_timeout = 0;
 	static uint32_t relink_count = 0;
 	bool fly_enable_last = false;
+	rc_data_updata();
 	if(rfIsLost()){
 		relink_count++;
 		//if(relink_count % 1000 == 0)
@@ -68,7 +69,6 @@ void handle_rc_data(void){
 			
 	}else{
 		relink_count = 0;
-		rc_data_updata();
 		ctrl_data = *get_rf_data();
 		manual_control.x = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, -1, ctrl_data.CtrlVar.aPitch);//pitch
 		manual_control.y = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, -1, ctrl_data.CtrlVar.aRoll);//roll
@@ -100,8 +100,8 @@ void handle_rc_data(void){
 						fly_enable = true;
 						armed_timeout = 0;
 			}
-			if(manual_control.z < 0.1f && manual_control.r > 0.9f && manual_control.x < -0.9 \
-				   && manual_control.y > 0.9 && !fly_enable_last && (armed_timeout ++ > 1000)){ // "/\" disarmed 1s timeout
+			if(manual_control.z < 0.15f && manual_control.r > 0.8f && \
+				    !fly_enable_last && (armed_timeout ++ > 1000)){ // "/\" disarmed 1s timeout
 					fly_enable = false;
 					armed_timeout = 0;
 			}
