@@ -32,6 +32,7 @@ int main(){
 	}else{
 		into_start_status(1);
 		pid_init();
+		get_imu_range_scale();
 		timer2_int_init();
 		while(1){
 		}

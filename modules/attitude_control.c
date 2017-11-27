@@ -202,7 +202,9 @@ void pid_init(void)
 
 	//TODO:add altitude params
 }
-
+float   P_MotoOutput = 0;
+float   R_MotoOutput = 0;
+float   Y_MotoOutput = 0;
 //TODO: all sp need to adjust line
 void task_1ms_int(void){
 	
@@ -221,14 +223,14 @@ void task_1ms_int(void){
 
 	//6 axis mode and 3 axis mode
 #if defined(DEBUG) 
-	if(get_fly_status() |1){
+	if(get_fly_status()|1){
 #else 
 	if(get_fly_status()){
 
 #endif	
 		control_ms ++;
 		if(control_ms == 4000000000) control_ms = 0;
-		if(get_control_mode()->control_attitude_enable){
+		//if(get_control_mode()->control_attitude_enable){
 			if(control_ms%5 == 0){
 				expEur.Pitch = get_control_val()->x * Angle_Pitch_Max;
 				expEur.Roll = get_control_val()->y * Angle_Roll_Max;
@@ -238,10 +240,10 @@ void task_1ms_int(void){
 				expRate.Pitch_rate = pidPitch.Output;
 				expRate.Roll_rate = pidRoll.Output;
 			}
-		}else{
-			expRate.Pitch_rate = get_control_val()->x * Rate_Pitch_Max;
-			expRate.Roll_rate = get_control_val()->y * Rate_Roll_Max;
-		}
+//		}else{
+//			expRate.Pitch_rate = get_control_val()->x * Rate_Pitch_Max;
+//			expRate.Roll_rate = get_control_val()->y * Rate_Roll_Max;
+//		}
 
 		expRate.Yaw_rate = get_control_val()->r * Rate_Yaw_Max;
 		attitude_rate_loop();
@@ -258,9 +260,7 @@ void task_1ms_int(void){
 
 		//TODO:throttle TPA
 
-		float   P_MotoOutput = 0;
-		float   R_MotoOutput = 0;
-		float   Y_MotoOutput = 0;
+		
 		P_MotoOutput = constrain_float(P_MotoOutput,-1000.f,1000.f);
 		R_MotoOutput = constrain_float(P_MotoOutput,-1000.f,1000.f);
 		Y_MotoOutput = constrain_float(P_MotoOutput,-1000.f,1000.f);
