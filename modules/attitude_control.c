@@ -201,7 +201,7 @@ void task_1ms_int(void){
 	
 	static uint32_t count_ms = 0;  //32bit = 2^32 * e-3 >> flight time
 	static uint32_t control_ms = 0;
-	GPIO_ResetBits(GPIOA,GPIO_Pin_2);
+	//GPIO_ResetBits(GPIOA,GPIO_Pin_2);
 	count_ms ++;
 	if(count_ms > 4000000000) count_ms = 0;	
 
@@ -214,7 +214,7 @@ void task_1ms_int(void){
 	}
 
 	//6 axis mode and 3 axis mode
-	//if(get_fly_status()){
+	if(get_fly_status()){
 		control_ms ++;
 		if(control_ms == 4000000000) control_ms = 0;
 		if(get_control_mode()->control_attitude_enable){
@@ -246,8 +246,10 @@ void task_1ms_int(void){
 		}
 
 		//TODO:throttle TPA
-
+	if(get_control_val()->z < 0.15){
+		P_MotoOutput = R_MotoOutput = Y_MotoOutput = 0;
 		
+	}else{
 		P_MotoOutput = constrain_float(P_MotoOutput,-1000.f,1000.f);
 		R_MotoOutput = constrain_float(P_MotoOutput,-1000.f,1000.f);
 		Y_MotoOutput = constrain_float(P_MotoOutput,-1000.f,1000.f);
@@ -255,6 +257,9 @@ void task_1ms_int(void){
 		P_MotoOutput = (pidPitchRate.Output/1000.0f)*PWM_RANGE;
 		R_MotoOutput = (pidRollRate.Output/1000.0f) *PWM_RANGE;
 		Y_MotoOutput = (pidYawRate.Output/1000.0f)  *PWM_RANGE;
+	}
+		
+		
 
 		moto1PRYOutput = -P_MotoOutput  +R_MotoOutput +Y_MotoOutput;
 		moto2PRYOutput = +P_MotoOutput  -R_MotoOutput -Y_MotoOutput;
@@ -280,7 +285,7 @@ void task_1ms_int(void){
 		}
 			moto_pwm_output(Motor1,Motor2,Motor3,Motor4,get_flipped_status());
 			
-	//}else{ // fly disable
+	}else{ // fly disable
 		control_ms = 0;
 		//clear integral
 		pidPitch.ki = 0;
@@ -293,7 +298,7 @@ void task_1ms_int(void){
 			moto_pwm_output(0.f,0.f,0.f,0.f,true);
 		else
 			moto_pwm_output(0.f,0.f,0.f,0.f,false);
-	//}
-	GPIO_SetBits(GPIOA,GPIO_Pin_2);
+	}
+	//GPIO_SetBits(GPIOA,GPIO_Pin_2);
 }
 
