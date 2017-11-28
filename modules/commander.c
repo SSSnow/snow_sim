@@ -95,8 +95,8 @@ void handle_rc_data(void){
 
 		}else{
 			flipped_enable = false;
-			if(manual_control.z < 0.1f && manual_control.r > 0.9f && manual_control.x < -0.9 \
-				   && manual_control.y < -0.9 && !fly_enable_last && (armed_timeout ++ > 1000)){//"\/" armed 1s timeout
+			if(manual_control.z < 0.1f && manual_control.r > 0.9f && manual_control.x < -0.8 \
+				   && manual_control.y < -0.7 && !fly_enable_last && (armed_timeout ++ > 1000)){//"\/" armed 1s timeout
 						fly_enable = true;
 						armed_timeout = 0;
 			}

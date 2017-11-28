@@ -170,8 +170,8 @@ void Quat2Euler(volatile  Quat *Q, FLOAT_RPY *eur)
 //    OS_EXIT_CRITICAL();
 
     eur->Roll    = atan2f(2 * (qw * qx + qy * qz) , 1 - 2 * (qx * qx + qy * qy)) * RAD_TO_DEG; //输出+-90
-//    eur->Pitch   = asinf(2 * (qw * qy - qz * qx)) * RAD_TO_DEG;              //笛卡尔坐标系                 //输出+-180
-	eur->Pitch   = asinf(-2 * (qw * qy - qz * qx)) * RAD_TO_DEG;             //NED坐标系                  //输出+-180
+    eur->Pitch   = asinf(2 * (qw * qy - qz * qx)) * RAD_TO_DEG;              //笛卡尔坐标系                 //输出+-180
+//	eur->Pitch   = asinf(-2 * (qw * qy - qz * qx)) * RAD_TO_DEG;             //NED坐标系                  //输出+-180
     eur->Yaw     = atan2f(2 * (qw * qz + qx * qy) , 1 - 2 * (qy * qy + qz * qz)) * RAD_TO_DEG; //输出+-180
 }
 

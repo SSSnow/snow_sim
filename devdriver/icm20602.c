@@ -155,8 +155,8 @@ static int icm20602_init(void){
 	// scaling factor:
 	// 1/(2^15)*(2000/180)*PI
 
-	gyro_range_scale = (0.0174532 / 16.4);//1.0f / (32768.0f * (2000.0f / 180.0f) * M_PI_F);
-	gyro_range_rad_s = (2000.0f / 180.0f) * M_PI_F;
+	gyro_range_scale = 0.061;//1.0f / (32768.0f * (2000.0f / 180.0f) * M_PI_F);
+	gyro_range_rad_s = 2000.0f ;/// 180.0f) * M_PI_F;
 
 	icm20602_write(ICMREG_ACCEL_CONFIG,ICM20602_ACCEL_SCALE8G); //+-8G
 	delay_ms(1);

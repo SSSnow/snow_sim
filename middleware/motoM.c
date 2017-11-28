@@ -28,17 +28,17 @@ void moto_pwm_output(float motor0,float motor1,float motor2,float motor3, bool r
 		TIM_SetCompare1(TIM3,0);//motoD+
 		TIM_SetCompare2(TIM3,500);//motoD-
 	}else{
-		TIM_SetCompare3(TIM3,(u16)motor0);//motoA+
+		TIM_SetCompare1(TIM3,0);//motoD+
+		TIM_SetCompare2(TIM3,(u16)motor0);//motoD-
+		
+		TIM_SetCompare3(TIM3,(u16)motor1);//motoA+
 		TIM_SetCompare4(TIM3,0);//motoA-
 
-		TIM_SetCompare1(TIM4,(u16)motor1);//motoB+
-		TIM_SetCompare2(TIM4,0);//motoB-
-	
 		TIM_SetCompare3(TIM4,0);//motoC+
 		TIM_SetCompare4(TIM4,(u16)motor2);//motoC-
-
-		TIM_SetCompare1(TIM3,0);//motoD+
-		TIM_SetCompare2(TIM3,(u16)motor3);//motoD-
+		
+		TIM_SetCompare1(TIM4,(u16)motor3);//motoB+
+		TIM_SetCompare2(TIM4,0);//motoB-	
 
 	}
 }

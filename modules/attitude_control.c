@@ -250,9 +250,9 @@ void task_1ms_int(void){
 		P_MotoOutput = R_MotoOutput = Y_MotoOutput = 0;
 		
 	}else{
-		P_MotoOutput = constrain_float(P_MotoOutput,-1000.f,1000.f);
-		R_MotoOutput = constrain_float(P_MotoOutput,-1000.f,1000.f);
-		Y_MotoOutput = constrain_float(P_MotoOutput,-1000.f,1000.f);
+		pidPitchRate.Output = constrain_float(pidPitchRate.Output,-1000.f,1000.f);
+		pidRollRate.Output = constrain_float(pidRollRate.Output,-1000.f,1000.f);
+		pidYawRate.Output = constrain_float(pidYawRate.Output,-1000.f,1000.f);
 
 		P_MotoOutput = (pidPitchRate.Output/1000.0f)*PWM_RANGE;
 		R_MotoOutput = (pidRollRate.Output/1000.0f) *PWM_RANGE;
@@ -261,10 +261,10 @@ void task_1ms_int(void){
 		
 		
 
-		moto1PRYOutput = -P_MotoOutput  +R_MotoOutput +Y_MotoOutput;
-		moto2PRYOutput = +P_MotoOutput  -R_MotoOutput -Y_MotoOutput;
-		moto3PRYOutput = -P_MotoOutput  -R_MotoOutput +Y_MotoOutput;
-		moto4PRYOutput = +P_MotoOutput  +R_MotoOutput -Y_MotoOutput;
+		moto1PRYOutput = -P_MotoOutput  +R_MotoOutput -Y_MotoOutput;
+		moto2PRYOutput = +P_MotoOutput  +R_MotoOutput +Y_MotoOutput;
+		moto3PRYOutput = +P_MotoOutput  -R_MotoOutput -Y_MotoOutput;
+		moto4PRYOutput = -P_MotoOutput  -R_MotoOutput +Y_MotoOutput;
 
 		Motor1 = throttle + moto1PRYOutput;
 		Motor2 = throttle + moto2PRYOutput;
