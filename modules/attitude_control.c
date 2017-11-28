@@ -75,7 +75,7 @@ void attitude_quat_cal(void){//1ms
 		IMU_P = 10.0f;
 		IMU_I = 0.0f;
 	}else{//armed
-		IMU_P = 0.8f;
+		IMU_P = 0.6f;
 	}
 
 	sensfusion6UpdateQ(&curGyroUnit, &curAccUnit, 0.001, &imuQ_6Axie);

@@ -33,7 +33,7 @@ unsigned int icm20602_register(void){
 static void icm20602_spi_init(void){
 
 	spi1_Init();
-	SPI1_SetSpeed(SPI_BaudRatePrescaler_8);
+	SPI1_SetSpeed(SPI_BaudRatePrescaler_64);
 }
 
 static uint8_t icm20602_write(uint8_t reg, uint8_t data){
@@ -142,6 +142,8 @@ static int icm20602_init(void){
 	// FS & DLPF   FS=2000 deg/s, DLPF = 20Hz (low pass filter)
 	// was 90 Hz, but this runs quality and does not improve the
 	// system response
+	icm20602_write(ICMREG_ACCEL_CONFIG2,ICM20602_ACC_DLPF_CFG_44HZ);
+	delay_ms(1);
 	icm20602_write(ICMREG_CONFIG,ICM20602_ACC_DLPF_CFG_44HZ); //44Hz
 	delay_ms(1);
 	icm20602_write(ICMREG_GYRO_CONFIG,BITS_FS_2000DPS);//+-2000deg/s
@@ -171,6 +173,7 @@ static int icm20602_init(void){
 	icm20602_write(MPUREG_ICM_UNDOC1, MPUREG_ICM_UNDOC1_VALUE); //refer to define describe
 	delay_ms(2);
 	
+	SPI1_SetSpeed(SPI_BaudRatePrescaler_8);
 	return probe();
 }
 
