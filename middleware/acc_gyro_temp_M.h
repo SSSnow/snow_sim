@@ -12,10 +12,10 @@
 #include "../modules/global_type.h"
 #include "math.h"
 
-typedef struct{
-	float scales;
-	float units;
-}RANGE_S;
+//typedef struct{
+//	float scales;
+//	float units;
+//}RANGE_S;
 
 /** accel scaling factors; Vout = Vscale * (Vin + Voffset) */
 typedef struct {
@@ -46,5 +46,6 @@ float GetGravity(void);
 uint8_t get_IMUtemperature_unit(float *Temp);
 FLOAT_ACC* get_acc_unit(void);
 FLOAT_GYRO* get_gyro_unit(void);
+uint8_t get_gyro_acc_temp_raw(void);
 
 #endif /* SRC_MIDDLEWARE_ACC_GYRO_TEMP_M_H_ */

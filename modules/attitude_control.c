@@ -59,6 +59,7 @@ bool baroStableFlag = false;
 PID pidPitch,pidRoll,pidPitchRate,pidRollRate,pidYawRate;
 
 void attitude_quat_cal(void){//1ms
+	get_gyro_acc_temp_raw();
 	curAccUnit = *get_acc_unit();
 	curGyroUnit = *get_gyro_unit();
 	
@@ -79,6 +80,7 @@ void attitude_quat_cal(void){//1ms
 	}
 
 	sensfusion6UpdateQ(&curGyroUnit, &curAccUnit, 0.001, &imuQ_6Axie);
+	//sensfusion6UpdateEuler(&imuQ_6Axie, &curEur.Roll, &curEur.Pitch);
 	Quat2Euler(&imuQ_6Axie, &curEur);
 
 }
@@ -121,11 +123,6 @@ void attitude_angle_loop(void){//5ms
 
 	pid_loop(&pidPitch, errEur.Pitch, 0);
 	pid_loop(&pidRoll, errEur.Roll, 0);
-
-	if(!get_fly_status()){
-		pidPitch.I_sum = 0;
-		pidRoll.I_sum = 0;
-	}
 }
 
 void attitude_rate_loop(void){ //1ms
@@ -133,6 +130,10 @@ void attitude_rate_loop(void){ //1ms
 	pid_loop(&pidPitchRate, expRate.Pitch_rate, curGyroUnit.gyroY);
 	pid_loop(&pidRollRate, expRate.Roll_rate,  curGyroUnit.gyroX);
 	pid_loop(&pidYawRate, expRate.Yaw_rate , curGyroUnit.gyroZ);
+}
+
+void attitude_angle_convert(void){
+	
 }
 
 FLOAT_XYZ rotateAngle = {0};
@@ -167,7 +168,7 @@ void pid_init(void)
 	pidPitch.I_max=20.f;
 	pidPitch.Dt =0.005f;
   //PitchRate params
-	pidPitchRate.kp=2.2f;
+	pidPitchRate.kp=0.65f;
 	pidPitchRate.kd=0.05f;
 	pidPitchRate.ki=0.f;
 	pidPitchRate.I_max=20.f;
@@ -185,7 +186,7 @@ void pid_init(void)
 	pidRollRate.I_max=pidPitchRate.I_max;
 	pidRollRate.Dt = pidPitchRate.Dt;
   //YawRate
-	pidYawRate.kp=25.0f;
+	pidYawRate.kp=1.0f;
 	pidYawRate.kd=0.001f;
 	pidYawRate.ki=0.00f;
 	pidYawRate.I_max=20.0f;
@@ -193,6 +194,7 @@ void pid_init(void)
 
 	//TODO:add altitude params
 }
+
 float   P_MotoOutput = 0;
 float   R_MotoOutput = 0;
 float   Y_MotoOutput = 0;
@@ -219,8 +221,10 @@ void task_1ms_int(void){
 		if(control_ms == 4000000000) control_ms = 0;
 		if(get_control_mode()->control_attitude_enable){
 			if(control_ms%5 == 0){
-				expEur.Pitch = get_control_val()->x * Angle_Pitch_Max;
+				expEur.Pitch = -get_control_val()->x * Angle_Pitch_Max;
 				expEur.Roll = get_control_val()->y * Angle_Roll_Max;
+				
+				//attitude_angle_loop();
 				pid_loop(&pidPitch, expEur.Pitch, curEur.Pitch);
 				pid_loop(&pidRoll, expEur.Roll, curEur.Roll);
 
@@ -246,7 +250,7 @@ void task_1ms_int(void){
 		}
 
 		//TODO:throttle TPA
-	if(get_control_val()->z < 0.15){
+	if(get_control_val()->z < 0.1f){
 		P_MotoOutput = R_MotoOutput = Y_MotoOutput = 0;
 		
 	}else{
@@ -261,29 +265,36 @@ void task_1ms_int(void){
 		
 		
 
-		moto1PRYOutput = -P_MotoOutput  +R_MotoOutput -Y_MotoOutput;
-		moto2PRYOutput = +P_MotoOutput  +R_MotoOutput +Y_MotoOutput;
-		moto3PRYOutput = +P_MotoOutput  -R_MotoOutput -Y_MotoOutput;
-		moto4PRYOutput = -P_MotoOutput  -R_MotoOutput +Y_MotoOutput;
+		moto1PRYOutput = +P_MotoOutput  +R_MotoOutput +Y_MotoOutput;
+		moto2PRYOutput = -P_MotoOutput  +R_MotoOutput -Y_MotoOutput;
+		moto3PRYOutput = -P_MotoOutput  -R_MotoOutput +Y_MotoOutput;
+		moto4PRYOutput = +P_MotoOutput  -R_MotoOutput -Y_MotoOutput;
 
 		Motor1 = throttle + moto1PRYOutput;
 		Motor2 = throttle + moto2PRYOutput;
 		Motor3 = throttle + moto3PRYOutput;
 		Motor4 = throttle + moto4PRYOutput;
-
+		float thr_attenuation = 0;
 		//do throttle output protect
 		if(Motor1>PWM_MAX||Motor2>PWM_MAX||Motor3>PWM_MAX||Motor4>PWM_MAX){
 			//find max motor output
 			float output_max = max(Motor1,max(Motor2,max(Motor3,Motor4)));
 			//lost height protect attitude
-			float thr_attenuation=throttle-(output_max-PWM_MAX);
-			//update attenuation output
-			Motor1 = thr_attenuation + moto1PRYOutput;
-			Motor2 = thr_attenuation + moto2PRYOutput;
-			Motor3 = thr_attenuation + moto3PRYOutput;
-			Motor4 = thr_attenuation + moto4PRYOutput;
+			thr_attenuation=throttle-(output_max-PWM_MAX);
+			
+		}else if(Motor1 < PWM_MIN || Motor2>PWM_MIN || Motor3>PWM_MIN || Motor4>PWM_MIN){
+			//find min motor output
+			float output_min = min(Motor1,min(Motor2,min(Motor3,Motor4)));
+			//lost height protect attitude
+			thr_attenuation=throttle-(output_min-PWM_MIN);
 		}
-			moto_pwm_output(Motor1,Motor2,Motor3,Motor4,get_flipped_status());
+		//update attenuation output
+		Motor1 = thr_attenuation + moto1PRYOutput;
+		Motor2 = thr_attenuation + moto2PRYOutput;
+		Motor3 = thr_attenuation + moto3PRYOutput;
+		Motor4 = thr_attenuation + moto4PRYOutput;
+		moto_pwm_output(Motor1,Motor2,Motor3,Motor4,get_flipped_status());
+		
 			
 	}else{ // fly disable
 		control_ms = 0;

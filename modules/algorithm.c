@@ -57,9 +57,13 @@ void sensfusion6UpdateQ(FLOAT_GYRO *gyro, FLOAT_ACC *accel, float dt, volatile Q
         az *= recipNorm;
 
         // Estimated direction of gravity and vector perpendicular to magnetic flux
-        halfvx = qx * qz - qw * qy;
-        halfvy = qw * qx + qy * qz;
-        halfvz = qw * qw - 0.5f + qz * qz;
+//        halfvx = qx * qz - qw * qy;
+//        halfvy = qw * qx + qy * qz;
+//        halfvz = qw * qw - 0.5f + qz * qz;
+		//(0,0,-1)
+		halfvx = -qx * qz + qw * qy;
+        halfvy = -qw * qx - qy * qz;
+        halfvz = -qw * qw + 0.5f - qz * qz;
 
         // Error is sum of cross product between estimated and measured direction of gravity
         halfex = (ay * halfvz - az * halfvy);
@@ -81,17 +85,21 @@ void sensfusion6UpdateQ(FLOAT_GYRO *gyro, FLOAT_ACC *accel, float dt, volatile Q
         gz += twoKp * halfez;
     }
 
-    float delta2 = (gx * gx + gy * gy + gz * gz) * dt * dt;
+    //float delta2 = (gx * gx + gy * gy + gz * gz) * dt * dt;
 
     float qw_last =  qw;
     float qx_last =  qx;
     float qy_last =  qy;
     float qz_last =  qz;
 
-    qw = qw_last * (1.0f - delta2 * 0.125f) + (-qx_last * gx - qy_last * gy - qz_last * gz) * 0.5f * dt;
-    qx = qx_last * (1.0f - delta2 * 0.125f) + (qw_last * gx + qy_last * gz - qz_last * gy) * 0.5f * dt;
-    qy = qy_last * (1.0f - delta2 * 0.125f) + (qw_last * gy - qx_last * gz + qz_last * gx) * 0.5f * dt;
-    qz = qz_last * (1.0f - delta2 * 0.125f) + (qw_last * gz + qx_last * gy - qy_last * gx) * 0.5f * dt;
+//    qw = qw_last * (1.0f - delta2 * 0.125f) + (-qx_last * gx - qy_last * gy - qz_last * gz) * 0.5f * dt;
+//    qx = qx_last * (1.0f - delta2 * 0.125f) + (qw_last * gx + qy_last * gz - qz_last * gy) * 0.5f * dt;
+//    qy = qy_last * (1.0f - delta2 * 0.125f) + (qw_last * gy - qx_last * gz + qz_last * gx) * 0.5f * dt;
+//    qz = qz_last * (1.0f - delta2 * 0.125f) + (qw_last * gz + qx_last * gy - qy_last * gx) * 0.5f * dt;
+	qw += (-qx_last * gx - qy_last * gy - qz_last * gz) * 0.5f * dt;
+    qx += (qw_last * gx + qy_last * gz - qz_last * gy) * 0.5f * dt;
+    qy += (qw_last * gy - qx_last * gz + qz_last * gx) * 0.5f * dt;
+    qz += (qw_last * gz + qx_last * gy - qy_last * gx) * 0.5f * dt;
 
     // Normalise quaternion
     recipNorm = invSqrt(qw * qw + qx * qx + qy * qy + qz * qz);
@@ -173,6 +181,21 @@ void Quat2Euler(volatile  Quat *Q, FLOAT_RPY *eur)
     eur->Pitch   = asinf(2 * (qw * qy - qz * qx)) * RAD_TO_DEG;              //笛卡尔坐标系                 //输出+-180
 //	eur->Pitch   = asinf(-2 * (qw * qy - qz * qx)) * RAD_TO_DEG;             //NED坐标系                  //输出+-180
     eur->Yaw     = atan2f(2 * (qw * qz + qx * qy) , 1 - 2 * (qy * qy + qz * qz)) * RAD_TO_DEG; //输出+-180
+}
+
+void sensfusion6UpdateEuler(Quat *Q,float *roll, float *pitch){
+	float gx,gy,gz;
+	float qw, qx, qy, qz;
+	qw = Q->qw;
+    qx = Q->qx;
+    qy = Q->qy;
+    qz = Q->qz;
+	gx = 2.f * (qx * qz - qw * qx);
+	gy = 2.f * (qw * qx + qy * qz);
+	gz = qw * qw - qx * qx - qy * qy + qz * qz;
+
+	*pitch = atanf(gx / sqrt(gy * gy + gz * gz)) * RAD_TO_DEG;
+	*roll = -atanf(gy / sqrt(gx * gx + gz * gz)) * RAD_TO_DEG;
 }
 
 //四元数叉乘
@@ -364,6 +387,105 @@ void Dcm_from_quat(Quat q, float dcm[3][3]){
        dcm[2][0] = 2 * (b * d - a * c);
        dcm[2][1] = 2 * (a * b + c * d);
        dcm[2][2] = aSq - bSq - cSq + dSq;
+}
+
+void attitude_axis_angle_cal(Quat Q_cur, Quat Q_exp){
+	//try to move thrust vector shortest way, because yaw response is slower than roll/pitch
+	float R_z[3] = {0};
+	float R_sp_z[3] = {0};
+	float R_z_cp[3] = {0};
+	float R_err[3] = {0};
+	
+	R_z[0] = 2 * (Q_cur.qw * Q_cur.qy + Q_cur.qx * Q_cur.qz); 
+	R_z[1] = 2 * (Q_cur.qy * Q_cur.qz - Q_cur.qw * Q_cur.qx);
+	R_z[2] = Q_cur.qw * Q_cur.qw - Q_cur.qx * Q_cur.qx - Q_cur.qy * Q_cur.qy + Q_cur.qz * Q_cur.qz;
+	
+	R_sp_z[0] = 2 * (Q_exp.qw * Q_exp.qy + Q_exp.qx * Q_exp.qz); 
+	R_sp_z[1] = 2 * (Q_exp.qy * Q_exp.qz - Q_exp.qw * Q_exp.qx);
+	R_sp_z[2] = Q_exp.qw * Q_exp.qw - Q_exp.qx * Q_exp.qx - Q_exp.qy * Q_exp.qy + Q_exp.qz * Q_exp.qz;
+	
+	R_z_cp[0] = R_z[1] *  R_sp_z[2] - R_z[2] * R_sp_z[1];
+	R_z_cp[1] = R_z[2] *  R_sp_z[0] - R_z[0] * R_sp_z[2];
+	R_z_cp[2] = R_z[0] *  R_sp_z[1] - R_z[1] * R_sp_z[0];
+	
+	R_err[0] = (Q_cur.qw * Q_cur.qw + Q_cur.qx * Q_cur.qx - Q_cur.qy * Q_cur.qy - Q_cur.qz * Q_cur.qz) * R_z_cp[0] \
+			  + (2 * (Q_cur.qx * Q_cur.qy + Q_cur.qw * Q_cur.qz)) * R_z_cp[1] \
+			  + (2 * (Q_cur.qw* Q_cur.qx - Q_cur.qy * Q_cur.qz)) * R_z_cp[2];
+	
+	R_err[1] = (2 * (Q_cur.qx * Q_cur.qy - Q_cur.qw * Q_cur.qz)) * R_z_cp[0] \
+			  + (Q_cur.qw * Q_cur.qw - Q_cur.qx * Q_cur.qx + Q_cur.qy * Q_cur.qy - Q_cur.qz * Q_cur.qz) * R_z_cp[1] \
+			  + (2 * (Q_cur.qw * Q_cur.qx + Q_cur.qy * Q_cur.qz)) * R_z_cp[2];
+			  
+	R_err[2] = (2 * (Q_cur.qw * Q_cur.qy + Q_cur.qx * Q_cur.qz)) * R_z_cp[0] \
+			  + (2 * (Q_cur.qy * Q_cur.qz - Q_cur.qw * Q_cur.qx)) * R_z_cp[1] \
+			  + (Q_cur.qw * Q_cur.qw - Q_cur.qx * Q_cur.qx - Q_cur.qy * Q_cur.qy + Q_cur.qz * Q_cur.qz) * R_z_cp[2];
+			  
+	float e_R_z_sin = sqrtf(R_err[0] * R_err[0] + R_err[1] * R_err[1] + R_err[2] * R_err[2]);
+	float e_R_z_cos = (R_z[0] * R_sp_z[0] + R_z[1] * R_sp_z[1] + R_z[2] * R_sp_z[2]);
+	
+	float R_rp[3] = {0};
+	
+	if(e_R_z_sin > 0.f){
+		float e_R_z_angle = atan2f(e_R_z_sin, e_R_z_cos);
+		float e_R_z_axis[3] = {0};
+		e_R_z_axis[0] = R_z[0] / e_R_z_sin;
+		e_R_z_axis[1] = R_z[1] / e_R_z_sin;
+		e_R_z_axis[2] = R_z[2] / e_R_z_sin;
+		
+		R_err[0] = e_R_z_axis[0] * e_R_z_angle;
+		R_err[1] = e_R_z_axis[1] * e_R_z_angle;
+		R_err[2] = e_R_z_axis[2] * e_R_z_angle;
+		
+		float e_R_cp[3][3] ={0};
+		e_R_cp[0][1] = -e_R_z_axis[2];
+		e_R_cp[0][2] = e_R_z_axis[1];
+		e_R_cp[1][0] = e_R_z_axis[2];
+		e_R_cp[1][2] = -e_R_z_axis[0];
+		e_R_cp[2][0] = -e_R_z_axis[1];
+		e_R_cp[2][1] = e_R_z_axis[0];
+		
+		float R_rp_temp[3] = {0};
+		R_rp_temp[0] = 1.f;
+		R_rp_temp[1] = e_R_cp[1][0] * e_R_z_sin + e_R_cp[1][0] * e_R_cp[1][0] * (1 - e_R_z_cos);
+		R_rp_temp[2] = e_R_cp[2][0] * e_R_z_sin + e_R_cp[2][0] * e_R_cp[2][0] * (1 - e_R_z_cos);
+		
+		R_rp[0] = (Q_cur.qw * Q_cur.qw + Q_cur.qx * Q_cur.qx - Q_cur.qy * Q_cur.qy - Q_cur.qz * Q_cur.qz) * R_rp_temp[0] \
+			  + (2 * (Q_cur.qx * Q_cur.qy - Q_cur.qw * Q_cur.qz)) * R_rp_temp[1] \
+			  + (2 * (Q_cur.qw* Q_cur.qy + Q_cur.qx * Q_cur.qz)) * R_rp_temp[2];
+		
+		R_rp[1] = (2 * (Q_cur.qx * Q_cur.qy + Q_cur.qw * Q_cur.qz)) * R_rp_temp[0] \
+			  + (Q_cur.qw * Q_cur.qw - Q_cur.qx * Q_cur.qx + Q_cur.qy * Q_cur.qy - Q_cur.qz * Q_cur.qz) * R_rp_temp[1] \
+			  + (2 * (Q_cur.qy * Q_cur.qz - Q_cur.qw * Q_cur.qx)) * R_rp_temp[2];
+		
+		R_rp[2] = (2 * (Q_cur.qx * Q_cur.qz - Q_cur.qw* Q_cur.qy)) * R_rp_temp[0] \
+			  + (2 * (Q_cur.qw * Q_cur.qx + Q_cur.qy * Q_cur.qz)) * R_rp_temp[1] \
+			  + (Q_cur.qw * Q_cur.qw - Q_cur.qx * Q_cur.qx - Q_cur.qy * Q_cur.qy + Q_cur.qz * Q_cur.qz) * R_rp_temp[2];
+		
+	}else{
+		R_rp[0] = Q_cur.qw * Q_cur.qw + Q_cur.qx * Q_cur.qx - Q_cur.qy * Q_cur.qy - Q_cur.qz * Q_cur.qz;
+		R_rp[1] = 2 * (Q_cur.qx * Q_cur.qy - Q_cur.qw * Q_cur.qz);
+		R_rp[2] = 2 * (Q_cur.qw* Q_cur.qy + Q_cur.qx * Q_cur.qz);
+	}
+	float R_sp_x[3] = {0};
+	R_sp_x[0] = Q_exp.qw * Q_exp.qw + Q_exp.qx * Q_exp.qx - Q_exp.qy * Q_exp.qy - Q_exp.qz * Q_exp.qz;
+	R_sp_x[1] = 2 * (Q_exp.qx * Q_exp.qy - Q_exp.qw * Q_exp.qz);
+	R_sp_x[2] = 2 * (Q_exp.qw* Q_exp.qy + Q_exp.qx * Q_exp.qz);
+	
+	float yaw_w = e_R_z_cos * e_R_z_cos;
+	float R_rp_cp[3] = {0};
+	R_rp_cp[0] = R_rp[1] *  R_sp_x[2] - R_rp[2] * R_sp_x[1];
+	R_rp_cp[1] = R_rp[2] *  R_sp_x[0] - R_rp[0] * R_sp_x[2];
+	R_rp_cp[2] = R_rp[0] *  R_sp_x[1] - R_rp[1] * R_sp_x[0];
+	float rp_sin = sqrtf(R_rp_cp[0] * R_sp_z[0] + R_rp_cp[1] * R_sp_z[1] + R_rp_cp[2] * R_sp_z[2]);
+	float rp_cos = R_rp[0] * R_sp_x[0] + R_rp[1] * R_sp_x[1] + R_rp[2] * R_sp_x[2];
+	
+	R_err[2] = atan2f(rp_sin,rp_cos) * yaw_w;
+	
+	if(e_R_z_cos < 0.f){
+		Quat Q_err = {0};
+		//TODO:
+	}
+ 
 }
 
 float invSqrt(float x)

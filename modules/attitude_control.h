@@ -14,6 +14,8 @@
 #include "status_instructions.h"
 #include "monitor_debug.h"
 #define max(a,b) (a > b)?a:b
+#define min(a,b) (a < b)?a:b
+
 void attitude_quat_cal(void);
 FLOAT_RPY *get_curEur(void);
 Quat *get_att_quat(void);

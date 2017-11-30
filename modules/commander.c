@@ -70,10 +70,12 @@ void handle_rc_data(void){
 	}else{
 		relink_count = 0;
 		ctrl_data = *get_rf_data();
-		manual_control.x = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, -1, ctrl_data.CtrlVar.aPitch);//pitch
-		manual_control.y = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, -1, ctrl_data.CtrlVar.aRoll);//roll
+		if(ctrl_data.CtrlVar.aPitch < 1000 ||ctrl_data.CtrlVar.aPitch < 1000 || ctrl_data.CtrlVar.aYaw < 1000 ){
+			manual_control.x = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, -1, ctrl_data.CtrlVar.aPitch);//pitch
+			manual_control.y = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, -1, ctrl_data.CtrlVar.aRoll);//roll
+			manual_control.r = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, -1, ctrl_data.CtrlVar.aYaw);//yaw
+		}
 		manual_control.z = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, 0, ctrl_data.CtrlVar.aThrottle);//throttle
-		manual_control.r = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, -1, ctrl_data.CtrlVar.aYaw);//yaw
 
 		if(ctrl_data.CtrlVar.aRFMode > 1000 && ctrl_data.CtrlVar.aRFMode < 1300){ //1200 rate_mode
 			mode = RATE_MODE;
@@ -101,7 +103,7 @@ void handle_rc_data(void){
 						armed_timeout = 0;
 			}
 			if(manual_control.z < 0.15f && manual_control.r > 0.8f && \
-				    !fly_enable_last && (armed_timeout ++ > 1000)){ // "/\" disarmed 1s timeout
+				    fly_enable_last && (armed_timeout ++ > 1000)){ // "/\" disarmed 1s timeout
 					fly_enable = false;
 					armed_timeout = 0;
 			}

@@ -7,10 +7,11 @@
 
 #include "icm20602.h"
 
-static float gyro_range_scale = 0.f;
-static float gyro_range_rad_s = 0.f;
-static float accel_range_scale = 0.f;
-static float accel_range_m_s2 = 0.f;
+//static float gyro_range_scale = 0.f;
+//static float gyro_range_rad_s = 0.f;
+//static float accel_range_scale = 0.f;
+//static float accel_range_m_s2 = 0.f;
+
 static unsigned int icm20602ID = 0;
 static uint8_t MPU_ID = 0;
 static DEV icm20602 = {
@@ -54,7 +55,6 @@ int icm20602_read(uint8_t reg, uint8_t readLen, uint8_t* readBuffer ){
     ICM20602_CS=ENABLE_ICM20602;//choose icm20602
 	SPI1_ReadWriteByte(reg|0x80); //read
 	reg_val=SPI1_ReadWriteLen(readBuffer, NULL, readLen);
-
 	ICM20602_CS=DISABLE_ICM20602;//cancle choose
 	return reg_val;
 }
@@ -63,7 +63,7 @@ static int icm20602_ioctrl(uint8_t cmd, void* arg){
 	switch(cmd){
 		case ICM20602_IOCTRL_ACCEL_READ:
 		{
-			uint8_t* pBuffer = arg;
+			uint8_t* pBuffer = arg;	
 			if(!icm20602_read(ICM20602_ACC_X_H, ICM20602_ACC_OUT_LEN, pBuffer))
 				return 0;
 		}
@@ -82,30 +82,30 @@ static int icm20602_ioctrl(uint8_t cmd, void* arg){
 				return 0;
 		}
 		break;
-		case ICM20602_IOCTRL_ACCEL_M_S2_READ:
-		{
-			uint8_t* pBuffer = arg;
-			*pBuffer = accel_range_m_s2;
-		}
-		break;
-		case ICM20602_IOCTRL_GYRO_RAD_S_READ:
-		{
-			uint8_t* pBuffer = arg;
-			*pBuffer = gyro_range_rad_s;
-		}
-		break;
-		case ICM20602_IOCTRL_ACC_SCALE_READ:
-		{
-			float* pBuffer = arg;
-			*pBuffer = accel_range_scale;
-		}
-		break;
-		case ICM20602_IOCTRL_GYRO_SCALE_READ:
-		{
-			float* pBuffer = arg;
-			*pBuffer = gyro_range_scale;
-		}
-		break;
+//		case ICM20602_IOCTRL_ACCEL_M_S2_READ:
+//		{
+//			uint8_t* pBuffer = arg;
+//			*pBuffer = accel_range_m_s2;
+//		}
+//		break;
+//		case ICM20602_IOCTRL_GYRO_RAD_S_READ:
+//		{
+//			uint8_t* pBuffer = arg;
+//			*pBuffer = gyro_range_rad_s;
+//		}
+//		break;
+//		case ICM20602_IOCTRL_ACC_SCALE_READ:
+//		{
+//			float* pBuffer = arg;
+//			*pBuffer = accel_range_scale;
+//		}
+//		break;
+//		case ICM20602_IOCTRL_GYRO_SCALE_READ:
+//		{
+//			float* pBuffer = arg;
+//			*pBuffer = gyro_range_scale;
+//		}
+//		break;
 		case ICM20602_IOCTRL_IMU_READ:
 		{
 			unsigned char* pBuffer = arg;
@@ -155,14 +155,14 @@ static int icm20602_init(void){
 	// scaling factor:
 	// 1/(2^15)*(2000/180)*PI
 
-	gyro_range_scale = 0.061;//1.0f / (32768.0f * (2000.0f / 180.0f) * M_PI_F);
-	gyro_range_rad_s = 2000.0f ;/// 180.0f) * M_PI_F;
+	//gyro_range_scale = 0.061;//1.0f / (32768.0f * (2000.0f / 180.0f) * M_PI_F);
+	//gyro_range_rad_s = 2000.0f ;/// 180.0f) * M_PI_F;
 
 	icm20602_write(ICMREG_ACCEL_CONFIG,ICM20602_ACCEL_SCALE8G); //+-8G
 	delay_ms(1);
 
-	accel_range_scale = (ICM20602_ONE_G / 4096.0f);
-	accel_range_m_s2 = 8.0f * ICM20602_ONE_G;
+	//accel_range_scale = 0.002392578125f;//(ICM20602_ONE_G / 4096.0f);
+	//accel_range_m_s2 = 16.0f * ICM20602_ONE_G;
 
 	// INT CFG => Interrupt on Data Ready
 	icm20602_write(ICMREG_INT_ENABLE, BIT_DATA_RDY_INT_EN);   // INT: Data ready interrupt enable
@@ -173,7 +173,7 @@ static int icm20602_init(void){
 	icm20602_write(MPUREG_ICM_UNDOC1, MPUREG_ICM_UNDOC1_VALUE); //refer to define describe
 	delay_ms(2);
 	
-	SPI1_SetSpeed(SPI_BaudRatePrescaler_8);
+	SPI1_SetSpeed(SPI_BaudRatePrescaler_16);
 	return probe();
 }
 

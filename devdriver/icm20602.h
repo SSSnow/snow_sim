@@ -149,7 +149,7 @@
 
 #define ICM20602_DEFAULT_ONCHIP_FILTER_FREQ		42
 
-#define ICM20602_ONE_G					9.80665f
+//#define ICM20602_ONE_G					9.80665f
 
 
 typedef struct{
