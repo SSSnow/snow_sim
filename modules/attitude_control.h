@@ -8,6 +8,7 @@
 #ifndef _ATTITUDE_CONTROL_H_
 #define _ATTITUDE_CONTROL_H_
 #include "../middleware/middleware.h"
+#include "../middleware/ano.h"
 #include "commander.h"
 #include "global_type.h"
 #include "algorithm.h"

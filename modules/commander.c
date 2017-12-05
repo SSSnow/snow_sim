@@ -60,8 +60,8 @@ void set_control_mode(NJZY_MODE mode){
 void handle_rc_data(void){
 	static int armed_timeout = 0;
 	static uint32_t relink_count = 0;
-	bool fly_enable_last = false;
-	rc_data_updata();
+	static bool fly_enable_last = false;
+	rc_data_update();
 	if(rfIsLost()){
 		relink_count++;
 		//if(relink_count % 1000 == 0)
@@ -70,7 +70,8 @@ void handle_rc_data(void){
 	}else{
 		relink_count = 0;
 		ctrl_data = *get_rf_data();
-		if(ctrl_data.CtrlVar.aPitch < 1000 ||ctrl_data.CtrlVar.aPitch < 1000 || ctrl_data.CtrlVar.aYaw < 1000 ){
+		if((ctrl_data.CtrlVar.aPitch < 2001 && ctrl_data.CtrlVar.aPitch > 999)||(ctrl_data.CtrlVar.aRoll < 2001 && ctrl_data.CtrlVar.aRoll > 999) \
+			|| (ctrl_data.CtrlVar.aYaw < 2001 && ctrl_data.CtrlVar.aYaw > 999)){
 			manual_control.x = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, -1, ctrl_data.CtrlVar.aPitch);//pitch
 			manual_control.y = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, -1, ctrl_data.CtrlVar.aRoll);//roll
 			manual_control.r = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, -1, ctrl_data.CtrlVar.aYaw);//yaw
@@ -102,7 +103,7 @@ void handle_rc_data(void){
 						fly_enable = true;
 						armed_timeout = 0;
 			}
-			if(manual_control.z < 0.15f && manual_control.r > 0.8f && \
+			if(manual_control.z < 0.05f && manual_control.r < -0.9f && \
 				    fly_enable_last && (armed_timeout ++ > 1000)){ // "/\" disarmed 1s timeout
 					fly_enable = false;
 					armed_timeout = 0;

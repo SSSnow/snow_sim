@@ -18,6 +18,7 @@
 #include "pressureM.h"
 #include "acc_gyro_temp_M.h"
 #include "monitorM.h"
+#include "ano.h"
 
 uint8_t middleware_init(void);
 

@@ -35,4 +35,7 @@ void Dcm_from_quat(Quat q, float dcm[3][3]);
 void sort(int *buffer, unsigned int len, unsigned char dir);
 float invSqrt(float x);
 void sensfusion6UpdateEuler(Quat *Q,float *roll, float *pitch);
+			  
+float fmax_motor(float motor1,float motor2, float motor3, float motor4);
+float fmin_motor(float motor1,float motor2, float motor3, float motor4);			  
 #endif /* SRC_MODULES_ALGORITHM_H_ */

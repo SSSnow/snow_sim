@@ -634,3 +634,67 @@ float linermap(const float L_max,   const float L_min,  \
     float output_t = tar_min + ((tar_max - tar_min) * in_t);
     return output_t;
 }
+			  
+float fmax_motor(float motor1,float motor2, float motor3, float motor4){
+	float max = 0.f;
+	if(motor1 > motor2){
+		if(motor1 > motor3){
+			if(motor1 > motor4){
+				max = motor1;
+			}else{
+				max = motor4;
+			}
+		}else{
+			if(motor3 > motor4)
+				max = motor3;
+			else
+				max = motor4;
+		}
+	}else{
+		if(motor2 > motor3){
+			if(motor2 > motor4){
+				max = motor2;
+			}else
+				max = motor4;
+		}else{
+			if(motor3 > motor4){
+				max = motor3;
+			}else
+				max = motor4;
+		}
+	}
+	
+	return max;
+}
+
+float fmin_motor(float motor1,float motor2, float motor3, float motor4){
+	float min = 0.f;
+	if(motor1 < motor2){
+		if(motor1 < motor3){
+			if(motor1 < motor4){
+				min = motor1;
+			}else{
+				min = motor4;
+			}
+		}else{
+			if(motor3 < motor4)
+				min = motor3;
+			else
+				min = motor4;
+		}
+	}else{
+		if(motor2 < motor3){
+			if(motor2 < motor4){
+				min = motor2;
+			}else
+				min = motor4;
+		}else{
+			if(motor3 < motor4){
+				min = motor3;
+			}else
+				min = motor4;
+		}
+	}
+	
+	return min;
+}

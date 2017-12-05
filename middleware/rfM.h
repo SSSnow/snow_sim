@@ -27,7 +27,7 @@ typedef union
 	unsigned short RemoteD[5];
 }NJZY_CONTROL_DATA;
 
-void rc_data_updata(void);
+void rc_data_update(void);
 void rf_relink(void);
 uint8_t rfIsLost(void);
 NJZY_CONTROL_DATA* get_rf_data(void);

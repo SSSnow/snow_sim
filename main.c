@@ -24,7 +24,6 @@ int main(){
 	uint8_t sensor_start_failed = 0;
 	delay_init();
 	DevInitSta = middleware_init();
-	test_gpioa2_init();
 	if((DevInitSta & DEV_ERR_ICM20602) != 0){
 		color = RED|BLUE;
 		sensors_init_failed(color,5);

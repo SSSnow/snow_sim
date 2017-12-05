@@ -134,11 +134,14 @@ static int icm20602_init(void){
 	// Wake up device and auto selects the best available clock source.
 	icm20602_write(ICMREG_PWR_MGMT_1, BITS_BESTCLOCK_PLL3);
 	delay_ms(10);
+	
 
 	// icm20602 select communication interface automatically.
 
 	icm20602_write(ICMREG_SMPLRT_DIV, 0x00);//set sample rate
 	delay_ms(1);
+	
+	icm20602_write(ICMREG_USER_CTRL,0x01 << 6);
 	// FS & DLPF   FS=2000 deg/s, DLPF = 20Hz (low pass filter)
 	// was 90 Hz, but this runs quality and does not improve the
 	// system response

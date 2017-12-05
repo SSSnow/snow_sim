@@ -31,8 +31,8 @@ uint8_t bsp_init(void){
 	init(cc2530_register());
 	delay_ms(1);
 	
-	//init(monitor_register());
-	//delay_ms(1);
+//	init(monitor_register());
+//	delay_ms(1);
 
 	return deviceInitSta;
 }

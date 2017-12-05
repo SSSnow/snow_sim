@@ -15,13 +15,13 @@ NJZY_RF_STR recRFPackage = {0};
 
 NJZY_CONTROL_DATA remoteData = {0};
 
-void rc_data_updata(void)
+void rc_data_update(void)
 {
 	recPackageFlag = read(cc2530_getID(), &recRFPackage, 0);
 
 	if(recPackageFlag == 1)
 	{
-		if(recRFPackage.status < 50){//not lost signal rssi is dbm when value in -50~0 is better < -70 is lost
+		if((recRFPackage.status - 128) < 127){//not lost signal rssi is dbm when value in -50~0 is better < -70 is lost
 				for(unsigned char i = 0; i < 12; i ++)
 					remoteData.RemoteD[i] = ((unsigned short *)recRFPackage.channel)[i];
 				rfLostCount = 0;

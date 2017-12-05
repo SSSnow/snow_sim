@@ -17,16 +17,16 @@ void moto_pwm_output(float motor0,float motor1,float motor2,float motor3, bool r
 	if(reveser_enable){//if need flipped, direct motor2,motor3 output max pwm value
 
 		TIM_SetCompare3(TIM3,0);//motoA+
-		TIM_SetCompare4(TIM3,0);////motoA-
+		TIM_SetCompare4(TIM3,1000);////motoA-
 
 		TIM_SetCompare1(TIM4,0);//motoB+
 		TIM_SetCompare2(TIM4,0);//motoB-
 	
-		TIM_SetCompare3(TIM4,0);//motoC+
-		TIM_SetCompare4(TIM4,500);//motoC-
+		TIM_SetCompare3(TIM4,1000);//motoC+
+		TIM_SetCompare4(TIM4,0);//motoC-
 
 		TIM_SetCompare1(TIM3,0);//motoD+
-		TIM_SetCompare2(TIM3,500);//motoD-
+		TIM_SetCompare2(TIM3,0);//motoD-
 	}else{
 		TIM_SetCompare1(TIM3,0);//motoD+
 		TIM_SetCompare2(TIM3,(u16)motor0);//motoD-

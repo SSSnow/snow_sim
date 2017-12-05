@@ -73,6 +73,12 @@ static int monitor_ioctrl(unsigned char cmd, void* arg)
 			monitor_send_nbyte((unsigned char*)pBuffer, sizeof(COMM_STR));
 		}
 		break;
+		case MONITOR_IOCTRL_ANO_DATA_WRITE:
+		{	
+			u8* pBuffer = arg;
+			monitor_send_nbyte((unsigned char*)pBuffer, 7);	
+		}
+		break;
 		default: break;
 	}
 	return 1;
@@ -145,7 +151,7 @@ static void	monitor_send_nbyte(unsigned char* pBuffer,unsigned int len){
 	while(len--){
 		USART_SendData(USART2, *pBuffer);  
 		pBuffer ++;
-		while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET){}  
+		while(USART_GetFlagStatus(USART2, USART_FLAG_TC) == RESET){}  
 	}
 }
 

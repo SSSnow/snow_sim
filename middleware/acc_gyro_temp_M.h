@@ -47,5 +47,7 @@ uint8_t get_IMUtemperature_unit(float *Temp);
 FLOAT_ACC* get_acc_unit(void);
 FLOAT_GYRO* get_gyro_unit(void);
 uint8_t get_gyro_acc_temp_raw(void);
+void cal_acc_uint(void);
+void cal_gyro_uint(void);
 
 #endif /* SRC_MIDDLEWARE_ACC_GYRO_TEMP_M_H_ */

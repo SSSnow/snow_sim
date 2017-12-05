@@ -15,7 +15,7 @@ extern float IMU_I;
 
 #define Rate_Pitch_Max 90.f
 #define Rate_Roll_Max 90.f
-#define Rate_Yaw_Max 20.f
+#define Rate_Yaw_Max 180.f
 
 #define Vel_Vert_Up_Max 3.f
 #define Vel_Vert_Down_Max 2.0f
@@ -24,9 +24,9 @@ extern float IMU_I;
 #define Up_Scale 1.f/(1.f - Hover_thr)
 #define Down_thr 1.f/Hover_thr
 #define PWM_MAX 1000
-#define PWM_MIN 100
+#define PWM_MIN 70
 #define PWM_RANGE (PWM_MAX-PWM_MIN)
-#define THR_FACTOR 0.9f
+#define THR_FACTOR 0.95f
 
 Quat imuQ_6Axie = {1.f, 0.f, 0.f, 0.f};
 FLOAT_RPY curEur = {0.f};
@@ -59,8 +59,10 @@ bool baroStableFlag = false;
 PID pidPitch,pidRoll,pidPitchRate,pidRollRate,pidYawRate;
 
 void attitude_quat_cal(void){//1ms
-	get_gyro_acc_temp_raw();
+	cal_acc_uint();
+	cal_gyro_uint();
 	curAccUnit = *get_acc_unit();
+	//curAccUnit = *get_acc_lowPass();
 	curGyroUnit = *get_gyro_unit();
 	
 //	static unsigned int imuStableCount = 0;
@@ -162,18 +164,18 @@ void pid_init(void)
 {
 
 	//Pitch params
-	pidPitch.kp=6.0f;
-	pidPitch.kd=0.12f;
+	pidPitch.kp=5.0f;
+	pidPitch.kd=0.0f;
 	pidPitch.ki=0.0f;
 	pidPitch.I_max=20.f;
 	pidPitch.Dt =0.005f;
-  //PitchRate params
-	pidPitchRate.kp=0.65f;
-	pidPitchRate.kd=0.05f;
-	pidPitchRate.ki=0.f;
+	//PitchRate params
+	pidPitchRate.kp=0.5f;
+	pidPitchRate.kd=0.0f;
+	pidPitchRate.ki=0.1f;
 	pidPitchRate.I_max=20.f;
 	pidPitchRate.Dt=0.001f;
-  //Roll params
+	//Roll params
 	pidRoll.kp=pidPitch.kp;
 	pidRoll.kd=pidPitch.kd;
 	pidRoll.ki=pidPitch.ki;
@@ -186,9 +188,9 @@ void pid_init(void)
 	pidRollRate.I_max=pidPitchRate.I_max;
 	pidRollRate.Dt = pidPitchRate.Dt;
   //YawRate
-	pidYawRate.kp=1.0f;
-	pidYawRate.kd=0.001f;
-	pidYawRate.ki=0.00f;
+	pidYawRate.kp=8.0f;
+	pidYawRate.kd=0.000f;
+	pidYawRate.ki=0.1f;
 	pidYawRate.I_max=20.0f;
 	pidYawRate.Dt = 0.001f;
 
@@ -208,6 +210,9 @@ void task_1ms_int(void){
 	if(count_ms > 4000000000) count_ms = 0;	
 
 	handle_rc_data();
+
+	//ANO_DT_Send_Sensor();
+	//ANO_DT_Send_Check();
 	
 	//calculate attitude angle 
 	attitude_quat_cal();
@@ -263,8 +268,6 @@ void task_1ms_int(void){
 		Y_MotoOutput = (pidYawRate.Output/1000.0f)  *PWM_RANGE;
 	}
 		
-		
-
 		moto1PRYOutput = +P_MotoOutput  +R_MotoOutput +Y_MotoOutput;
 		moto2PRYOutput = -P_MotoOutput  +R_MotoOutput -Y_MotoOutput;
 		moto3PRYOutput = -P_MotoOutput  -R_MotoOutput +Y_MotoOutput;
@@ -276,23 +279,29 @@ void task_1ms_int(void){
 		Motor4 = throttle + moto4PRYOutput;
 		float thr_attenuation = 0;
 		//do throttle output protect
-		if(Motor1>PWM_MAX||Motor2>PWM_MAX||Motor3>PWM_MAX||Motor4>PWM_MAX){
+		if(Motor1 > PWM_MAX || Motor2 > PWM_MAX || Motor3 > PWM_MAX || Motor4 > PWM_MAX){
 			//find max motor output
-			float output_max = max(Motor1,max(Motor2,max(Motor3,Motor4)));
+			float output_max = fmax_motor(Motor1, Motor2, Motor3, Motor4);
 			//lost height protect attitude
 			thr_attenuation=throttle-(output_max-PWM_MAX);
+			//update attenuation output
+			Motor1 = thr_attenuation + moto1PRYOutput;
+			Motor2 = thr_attenuation + moto2PRYOutput;
+			Motor3 = thr_attenuation + moto3PRYOutput;
+			Motor4 = thr_attenuation + moto4PRYOutput;
 			
-		}else if(Motor1 < PWM_MIN || Motor2>PWM_MIN || Motor3>PWM_MIN || Motor4>PWM_MIN){
+		}else if(Motor1 < PWM_MIN || Motor2 < PWM_MIN || Motor3 < PWM_MIN || Motor4 < PWM_MIN){
 			//find min motor output
-			float output_min = min(Motor1,min(Motor2,min(Motor3,Motor4)));
+			float output_min = fmin_motor(Motor1, Motor2, Motor3, Motor4);
 			//lost height protect attitude
 			thr_attenuation=throttle-(output_min-PWM_MIN);
+			//update attenuation output
+			Motor1 = thr_attenuation + moto1PRYOutput;
+			Motor2 = thr_attenuation + moto2PRYOutput;
+			Motor3 = thr_attenuation + moto3PRYOutput;
+			Motor4 = thr_attenuation + moto4PRYOutput;
 		}
-		//update attenuation output
-		Motor1 = thr_attenuation + moto1PRYOutput;
-		Motor2 = thr_attenuation + moto2PRYOutput;
-		Motor3 = thr_attenuation + moto3PRYOutput;
-		Motor4 = thr_attenuation + moto4PRYOutput;
+		
 		moto_pwm_output(Motor1,Motor2,Motor3,Motor4,get_flipped_status());
 		
 			

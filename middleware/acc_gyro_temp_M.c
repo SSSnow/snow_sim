@@ -99,6 +99,7 @@ uint8_t get_gyro_acc_temp_raw(void){
 		((char*)&gyroRawShort.gyroZ)[1] = ReadBuffer[12];
 		
 	}
+	return 1;
 }
 
 void ICM20602_ACC_READ(void){
@@ -160,7 +161,18 @@ void ICM20602_GYRO_READ(void){
 //	return ret;
 //}
 
+
 FLOAT_ACC* get_acc_unit(void){
+
+	return &accUnit;
+}
+
+FLOAT_GYRO* get_gyro_unit(void){
+
+	return &gyroUnit;
+}
+
+void cal_acc_uint(void){
 	get_acc_raw();
 	//ICM20602_ACC_READ();
 	short accX_temp = 0;
@@ -178,11 +190,9 @@ FLOAT_ACC* get_acc_unit(void){
 	accUnit.accX = (float)accX_temp * acc_coeffient;
 	accUnit.accY = (float)accY_temp * acc_coeffient;
 	accUnit.accZ = (float)accZ_temp * acc_coeffient;
-
-	return &accUnit;
 }
 
-FLOAT_GYRO* get_gyro_unit(void){
+void cal_gyro_uint(void){
 	get_gyro_raw();
 	//ICM20602_GYRO_READ();
 	short gyroX_temp = 0;
@@ -200,11 +210,7 @@ FLOAT_GYRO* get_gyro_unit(void){
 	gyroUnit.gyroX =(float)gyroX_temp * gyro_coeffient;
 	gyroUnit.gyroY =(float)gyroY_temp * gyro_coeffient;
 	gyroUnit.gyroZ =(float)gyroZ_temp * gyro_coeffient;
-
-	return &gyroUnit;
 }
-
-
 
 uint8_t PeaceDataCnt = 0, PeaceDataIndex = 0;
 
