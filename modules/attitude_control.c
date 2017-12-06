@@ -164,7 +164,7 @@ void pid_init(void)
 {
 
 	//Pitch params
-	pidPitch.kp=5.0f;
+	pidPitch.kp=8.0f;
 	pidPitch.kd=0.0f;
 	pidPitch.ki=0.0f;
 	pidPitch.I_max=20.f;
@@ -188,7 +188,7 @@ void pid_init(void)
 	pidRollRate.I_max=pidPitchRate.I_max;
 	pidRollRate.Dt = pidPitchRate.Dt;
   //YawRate
-	pidYawRate.kp=8.0f;
+	pidYawRate.kp=5.0f;
 	pidYawRate.kd=0.000f;
 	pidYawRate.ki=0.1f;
 	pidYawRate.I_max=20.0f;
@@ -205,12 +205,12 @@ void task_1ms_int(void){
 	
 	static uint32_t count_ms = 0;  //32bit = 2^32 * e-3 >> flight time
 	static uint32_t control_ms = 0;
-	//GPIO_ResetBits(GPIOA,GPIO_Pin_2);
+	GPIO_ResetBits(GPIOA,GPIO_Pin_2);
 	count_ms ++;
 	if(count_ms > 4000000000) count_ms = 0;	
-
-	handle_rc_data();
-
+	if(count_ms % 30 == 0){
+		handle_rc_data();
+	}
 	//ANO_DT_Send_Sensor();
 	//ANO_DT_Send_Check();
 	
@@ -219,7 +219,6 @@ void task_1ms_int(void){
 	if(count_ms % 10 == 0){
 		led_status_update();
 	}
-
 	//6 axis mode and 3 axis mode
 	if(get_fly_status()){
 		control_ms ++;
@@ -319,6 +318,6 @@ void task_1ms_int(void){
 		else
 			moto_pwm_output(0.f,0.f,0.f,0.f,false);
 	}
-	//GPIO_SetBits(GPIOA,GPIO_Pin_2);
+//	GPIO_SetBits(GPIOA,GPIO_Pin_2);
 }
 

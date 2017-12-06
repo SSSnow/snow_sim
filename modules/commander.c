@@ -64,8 +64,8 @@ void handle_rc_data(void){
 	rc_data_update();
 	if(rfIsLost()){
 		relink_count++;
-		//if(relink_count % 1000 == 0)
-			//rf_relink();
+		if(relink_count % 200 == 0)
+			rf_relink();
 			
 	}else{
 		relink_count = 0;
@@ -77,6 +77,8 @@ void handle_rc_data(void){
 			manual_control.r = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, -1, ctrl_data.CtrlVar.aYaw);//yaw
 		}
 		manual_control.z = linermap(RC_CHANNAL_MAX, RC_CHANNAL_MIN, 1, 0, ctrl_data.CtrlVar.aThrottle);//throttle
+		
+		
 
 		if(ctrl_data.CtrlVar.aRFMode > 1000 && ctrl_data.CtrlVar.aRFMode < 1300){ //1200 rate_mode
 			mode = RATE_MODE;
@@ -99,12 +101,12 @@ void handle_rc_data(void){
 		}else{
 			flipped_enable = false;
 			if(manual_control.z < 0.1f && manual_control.r > 0.9f && manual_control.x < -0.8 \
-				   && manual_control.y < -0.7 && !fly_enable_last && (armed_timeout ++ > 1000)){//"\/" armed 1s timeout
+				   && manual_control.y < -0.7 && !fly_enable_last && (armed_timeout ++ > 33)){//"\/" armed 1s timeout
 						fly_enable = true;
 						armed_timeout = 0;
 			}
 			if(manual_control.z < 0.05f && manual_control.r < -0.9f && \
-				    fly_enable_last && (armed_timeout ++ > 1000)){ // "/\" disarmed 1s timeout
+				    fly_enable_last && (armed_timeout ++ > 34)){ // "/\" disarmed 1s timeout
 					fly_enable = false;
 					armed_timeout = 0;
 			}

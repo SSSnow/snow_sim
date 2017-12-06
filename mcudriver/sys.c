@@ -23,7 +23,7 @@ void RCC_Config(void)
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE1_DIV1;
 
     // PLL configuration
-    RCC_PLLConfig(RCC_PLLSource_HSI_Div2, RCC_PLLMul_12);
+    RCC_PLLConfig(RCC_PLLSource_HSE_Div2, RCC_PLLMul_9);
 
     // Enable PLL
     RCC->CR |= RCC_CR_PLLON;//RCC_PLLCmd(ENABLE);
@@ -39,6 +39,10 @@ void RCC_Config(void)
     while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)RCC_CFGR_SWS_PLL)
     {
     }
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
 }
 
 //RCC_HSE_Configuration function set HSE to PLL clock source, or callback SystemInit() function

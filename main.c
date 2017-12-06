@@ -22,6 +22,7 @@ int main(){
 	uint8_t DevInitSta = 0x00;
 	uint8_t color = 0x00;
 	uint8_t sensor_start_failed = 0;
+	//test_gpioa2_init();
 	delay_init();
 	DevInitSta = middleware_init();
 	if((DevInitSta & DEV_ERR_ICM20602) != 0){

@@ -8,7 +8,7 @@
 #include "rfM.h"
 
 static unsigned char recPackageFlag = 0;
-static unsigned int rfLostCount = 1000;//默认是掉信号
+static unsigned int rfLostCount = 100;//默认是掉信号
 unsigned char rfRelinkClose = 0;
 
 NJZY_RF_STR recRFPackage = {0};
@@ -21,15 +21,15 @@ void rc_data_update(void)
 
 	if(recPackageFlag == 1)
 	{
-		if((recRFPackage.status - 128) < 127){//not lost signal rssi is dbm when value in -50~0 is better < -70 is lost
+		if((recRFPackage.status - 128) < 100){//not lost signal rssi is dbm when value in -50~0 is better < -70 is lost
 				for(unsigned char i = 0; i < 12; i ++)
 					remoteData.RemoteD[i] = ((unsigned short *)recRFPackage.channel)[i];
 				rfLostCount = 0;
 		}else{
 				rfLostCount ++;
-				if(rfLostCount >= 2000)
+				if(rfLostCount >= 100)
 				{
-					rfLostCount = 2000;
+					rfLostCount = 100;
 				}
 		}
 		rfRelinkClose = 1;
@@ -37,9 +37,9 @@ void rc_data_update(void)
 	else
 	{
 		rfLostCount ++;
-		if(rfLostCount >= 2000)
+		if(rfLostCount >= 100)
 		{
-			 rfLostCount = 2000;
+			 rfLostCount = 100;
 		}
 	}
 }
@@ -65,7 +65,7 @@ void rf_relink(void)
 
 uint8_t rfIsLost(void)
 {
-	if(rfLostCount > 2000)
+	if(rfLostCount >= 100)
 		return 1;
 	else
 		return 0;

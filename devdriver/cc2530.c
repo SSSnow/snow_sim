@@ -14,7 +14,7 @@ uint8_t *USART1_DMA_TX_Buf;
 uint8_t USART1_DMA_RX_Buf0[RX_BUF_LEN];
 uint8_t USART1_DMA_RX_Buf1[RX_BUF_LEN];
 uint8_t using_buf0=0;
-uint8_t using_buf1=0;
+uint8_t using_buf1=0; 
 
 static DEV cc2530 = {
 		.name = "CC2530",
@@ -40,10 +40,10 @@ static int cc2530_init(void){
 }
 
 static int cc2530_read(void* buffer, unsigned int len){
-	if(using_buf0)
-		while(cc2530_parse_packet(USART1_DMA_RX_Buf1));
-	else
-		while(cc2530_parse_packet(USART1_DMA_RX_Buf0));
+//	if(using_buf0)
+//		while(cc2530_parse_packet(USART1_DMA_RX_Buf1));
+//	else
+//		while(cc2530_parse_packet(USART1_DMA_RX_Buf0));
 
 	if(cc2530_rec_data_flag == 1){
 		NJZY_RF_STR* pBuffer = buffer;
@@ -64,10 +64,10 @@ static void cc2530_usart1_init(void){
 		GPIO_InitTypeDef GPIO_InitStructure;
 		USART_InitTypeDef USART_InitStructure;
 		NVIC_InitTypeDef NVIC_InitStructure;
-		DMA_InitTypeDef DMA_InitStructure;
+		//DMA_InitTypeDef DMA_InitStructure;
 
-		RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1|RCC_APB2Periph_GPIOA, ENABLE);
-		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_AFIO, ENABLE);
+		//RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
 		
 		GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
 		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -88,29 +88,29 @@ static void cc2530_usart1_init(void){
 	    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 	    USART_Cmd(USART1, ENABLE);
 		
-		DMA_DeInit(DMA1_Channel5);
-		DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)(&USART1->DR);
-		DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)USART1_DMA_RX_Buf0;
-		DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
-		DMA_InitStructure.DMA_BufferSize = RX_BUF_LEN;
-		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-	    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-	    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-	    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
-	    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-		DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-	    DMA_Init(DMA1_Channel5, &DMA_InitStructure);
-		DMA_ITConfig(DMA1_Channel5,DMA_IT_TC,ENABLE);
-		USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
-		DMA_Cmd(DMA1_Channel5,ENABLE);
+//		DMA_DeInit(DMA1_Channel5);
+//		DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)(&USART1->DR);
+//		DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)USART1_DMA_RX_Buf0;
+//		DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
+//		DMA_InitStructure.DMA_BufferSize = RX_BUF_LEN;
+//		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+//	    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+//		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+//	    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+//	    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+//	    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+//		DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+//	    DMA_Init(DMA1_Channel5, &DMA_InitStructure);
+//		DMA_ITConfig(DMA1_Channel5,DMA_IT_TC,ENABLE);
+//		USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
+//		DMA_Cmd(DMA1_Channel5,ENABLE);
 		
-		NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
-		NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel5_IRQn;
-		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-		NVIC_Init(&NVIC_InitStructure);
+//		NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+//		NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel5_IRQn;
+//		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+//		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+//		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//		NVIC_Init(&NVIC_InitStructure);
 
 //	    /* Enable USART1 DMA TX request */
 //	    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
@@ -138,15 +138,15 @@ static void cc2530_usart1_init(void){
 
 	    /* Enable USART1 Interrupt */
 		
-//		NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
-//	    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
-//	    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-//        NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-//		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//        NVIC_Init(&NVIC_InitStructure);
+		//NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+	    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
+	    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+        NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+        NVIC_Init(&NVIC_InitStructure);
 
 }
-/*
+
 void cc2530_usart1_rx_irqhandle(uint8_t data){
 	static uint8_t cc2530_step = 0;
 	static uint8_t cc2530_count = 0;
@@ -168,7 +168,7 @@ void cc2530_usart1_rx_irqhandle(uint8_t data){
 			}
 			break;
 		case 2:
-			if((data > 0) && (data < 32)){
+			if(data == 0x0E){
 				cc2530_rec.len = data;
 				cc2530_step = 3;
 			}else{
@@ -176,9 +176,13 @@ void cc2530_usart1_rx_irqhandle(uint8_t data){
 			}
 			break;
 		case 3:
-			cc2530_rec.type = data;
-			cc2530_count = 0;
-			cc2530_step = 4;
+			if( data == NJZY_PACKET_TYPE_CONTROL){
+				cc2530_rec.type = data;
+				cc2530_count = 0;
+				cc2530_step = 4;
+			}else{
+				cc2530_step = 0;
+			}
 			break;
 		case 4:
 			cc2530_rec.buffer[cc2530_count] = data;
@@ -187,15 +191,13 @@ void cc2530_usart1_rx_irqhandle(uint8_t data){
 				cc2530_step = 0;
 				cc2530_count = 0;
 			}else if(cc2530_count == (cc2530_rec.len-1)){
-				uint8_t crc = crcRfCal((unsigned char *)&cc2530_rec.len, cc2530_rec.len);
-				if(crcRfCal((unsigned char *)&cc2530_rec.len, cc2530_rec.len)  == cc2530_rec.buffer[cc2530_rec.len - 2]){
-					if(cc2530_rec.type == NJZY_PACKET_TYPE_CONTROL){
-						cc2530_remote_rec_packet = *(NJZY_RF_STR*)(cc2530_rec.buffer);
-						cc2530_rec_data_flag = 1;
-					}
+				//uint8_t crc = crcRfCal((unsigned char *)&cc2530_rec.len, cc2530_rec.len);
+				if(crcRfCal((unsigned char *)&cc2530_rec.len, cc2530_rec.len) == cc2530_rec.buffer[cc2530_rec.len - 2]){				
+					cc2530_remote_rec_packet = *(NJZY_RF_STR*)(cc2530_rec.buffer);
+					cc2530_rec_data_flag = 1;
+				}	
 				cc2530_count = 0;
-				cc2530_step = 0;
-				}
+				cc2530_step = 0;		
 			}
 			break;
 		default:
@@ -204,13 +206,15 @@ void cc2530_usart1_rx_irqhandle(uint8_t data){
 			break;
 		}
 }
-*/
 
-//void USART1_IRQHandler(void){
-//	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET){	
-//		cc2530_usart1_rx_irqhandle(USART_ReceiveData(USART1));
-//	}
-//}
+void USART1_IRQHandler(void){
+	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET){
+		//GPIO_ResetBits(GPIOA,GPIO_Pin_2);		
+		USART_ClearITPendingBit(USART1,USART_IT_RXNE); 
+		cc2530_usart1_rx_irqhandle(USART_ReceiveData(USART1));
+		//GPIO_SetBits(GPIOA,GPIO_Pin_2);
+	}
+}
 
 
 void cc2530_usart1_send_nbyte(unsigned char *pBuffer, unsigned int len){
@@ -221,19 +225,19 @@ void cc2530_usart1_send_nbyte(unsigned char *pBuffer, unsigned int len){
 	}
 }
 
-void DMA1_Channel5_IRQHandler()
-{
-    if(DMA_GetITStatus(DMA1_IT_TC5)){
-      if(using_buf0 ==0){
-		DMA1_Channel5->CMAR = (u32)USART1_DMA_RX_Buf0;
-        using_buf0 = 1;
-    }else{
-       DMA1_Channel5->CMAR = (u32)USART1_DMA_RX_Buf1;
-       using_buf0 = 0;
-    }
-    DMA_ClearITPendingBit(DMA1_IT_TC5);
-  }    
-}
+//void DMA1_Channel5_IRQHandler()
+//{
+//    if(DMA_GetITStatus(DMA1_IT_TC5)){
+//      if(using_buf0 ==0){
+//		DMA1_Channel5->CMAR = (u32)USART1_DMA_RX_Buf0;
+//        using_buf0 = 1;
+//    }else{
+//       DMA1_Channel5->CMAR = (u32)USART1_DMA_RX_Buf1;
+//       using_buf0 = 0;
+//    }
+//    DMA_ClearITPendingBit(DMA1_IT_TC5);
+//  }    
+//}
 
 //void cc2530_usart1_send_nbyte(unsigned char *pBuffer, unsigned int len){
 //	while(cc2530UartDmaTxFlag == 0);
@@ -251,95 +255,96 @@ void DMA1_Channel5_IRQHandler()
 //    cc2530UartDmaTxFlag = 1;
 //  }
 //}
-NJZY_PARSE_PACKET parse_step = HEAD1;
-uint8_t cc2530_parse_packet(uint8_t *buf){
-	static uint8_t cc2530_count = 0;
-	static uint8_t buffer_count = 0;
-	switch(parse_step){
-		case HEAD1:
-			if(0x4E == buf[buffer_count]){ //'N'
-				cc2530_rec.h1 = 0x4E;
-				buffer_count++;
-				if(buffer_count > (RX_BUF_LEN-1)) return 0;
-				parse_step = HEAD2;
-			}else{
-				buffer_count++;
-				if(buffer_count > (RX_BUF_LEN-1)) return 0;
-			}
-			break;
-		case HEAD2:
-			if(0x59 == buf[buffer_count]){//'Y'
-				cc2530_rec.h2 = 0x59;
-				buffer_count++;
-				if(buffer_count > (RX_BUF_LEN-1)) {
-					parse_step = HEAD1;
-					return 0;
-				}
-				parse_step = LEN;
-			}else{
-				buffer_count++;
-				parse_step = HEAD1;
-				if(buffer_count > (RX_BUF_LEN-1)) return 0;
-			}
-			break;
-		case LEN:
-			if((buf[buffer_count] > 0) && (buf[buffer_count] < 32)){
-				cc2530_rec.len = buf[buffer_count];
-				buffer_count++;
-				if(buffer_count > (RX_BUF_LEN-1)) {
-					parse_step = HEAD1;
-					return 0;
-				}
-				parse_step = TYPE;
-			}else{
-				buffer_count++;
-				parse_step = HEAD1;
-				if(buffer_count > (RX_BUF_LEN-1))return 0; 
-			}
-			break;
-		case TYPE:
-			if(buf[buffer_count] == NJZY_PACKET_TYPE_CONTROL){
-				cc2530_rec.type = NJZY_PACKET_TYPE_CONTROL;
-				cc2530_count = 0;
-				buffer_count++;
-				if(buffer_count > (RX_BUF_LEN-1)) {
-					parse_step = HEAD1;
-					return 0;
-				}
-				parse_step = DATA;
-			}else{
-				buffer_count++;
-				parse_step = HEAD1;
-				if(buffer_count > (RX_BUF_LEN-1))return 0;
-			}
-			break;
-		case DATA:
-			cc2530_rec.buffer[cc2530_count] = buf[buffer_count];
-			cc2530_count++;
-			buffer_count++;
-			if(cc2530_count > 31){
-				parse_step = HEAD1;
-				cc2530_count = 0;
-				buffer_count = 0;
-				return 0;
-			}else if(cc2530_count == (cc2530_rec.len-1)){
-				//uint8_t crc = crcRfCal((unsigned char *)&cc2530_rec.len, cc2530_rec.len);
-				if(crcRfCal((unsigned char *)&cc2530_rec.len, cc2530_rec.len)  == cc2530_rec.buffer[cc2530_rec.len - 2]){{
-					cc2530_remote_rec_packet = *(NJZY_RF_STR*)(cc2530_rec.buffer);
-					cc2530_rec_data_flag = 1;
-				}
-				cc2530_count = 0;
-				buffer_count = 0;
-				parse_step = HEAD1;
-				return 0;
-				}
-			}
-			break;
-		default:
-			cc2530_count = 0;
-			buffer_count = 0;
-			parse_step = HEAD1;
-			return 0;
-		}
-		return 1;
-}
+
+//NJZY_PARSE_PACKET parse_step = HEAD1;
+//uint8_t cc2530_parse_packet(uint8_t *buf){
+//	static uint8_t cc2530_count = 0;
+//	static uint8_t buffer_count = 0;
+//	switch(parse_step){
+//		case HEAD1:
+//			if(0x4E == buf[buffer_count]){ //'N'
+//				cc2530_rec.h1 = 0x4E;
+//				buffer_count++;
+//				if(buffer_count > (RX_BUF_LEN-1)) return 0;
+//				parse_step = HEAD2;
+//			}else{
+//				buffer_count++;
+//				if(buffer_count > (RX_BUF_LEN-1)) return 0;
+//			}
+//			break;
+//		case HEAD2:
+//			if(0x59 == buf[buffer_count]){//'Y'
+//				cc2530_rec.h2 = 0x59;
+//				buffer_count++;
+//				if(buffer_count > (RX_BUF_LEN-1)) {
+//					parse_step = HEAD1;
+//					return 0;
+//				}
+//				parse_step = LEN;
+//			}else{
+//				buffer_count++;
+//				parse_step = HEAD1;
+//				if(buffer_count > (RX_BUF_LEN-1)) return 0;
+//			}
+//			break;
+//		case LEN:
+//			if((buf[buffer_count] > 0) && (buf[buffer_count] < 32)){
+//				cc2530_rec.len = buf[buffer_count];
+//				buffer_count++;
+//				if(buffer_count > (RX_BUF_LEN-1)) {
+//					parse_step = HEAD1;
+//					return 0;
+//				}
+//				parse_step = TYPE;
+//			}else{
+//				buffer_count++;
+//				parse_step = HEAD1;
+//				if(buffer_count > (RX_BUF_LEN-1))return 0; 
+//			}
+//			break;
+//		case TYPE:
+//			if(buf[buffer_count] == NJZY_PACKET_TYPE_CONTROL){
+//				cc2530_rec.type = NJZY_PACKET_TYPE_CONTROL;
+//				cc2530_count = 0;
+//				buffer_count++;
+//				if(buffer_count > (RX_BUF_LEN-1)) {
+//					parse_step = HEAD1;
+//					return 0;
+//				}
+//				parse_step = DATA;
+//			}else{
+//				buffer_count++;
+//				parse_step = HEAD1;
+//				if(buffer_count > (RX_BUF_LEN-1))return 0;
+//			}
+//			break;
+//		case DATA:
+//			cc2530_rec.buffer[cc2530_count] = buf[buffer_count];
+//			cc2530_count++;
+//			buffer_count++;
+//			if(cc2530_count > 31){
+//				parse_step = HEAD1;
+//				cc2530_count = 0;
+//				buffer_count = 0;
+//				return 0;
+//			}else if(cc2530_count == (cc2530_rec.len-1)){
+//				//uint8_t crc = crcRfCal((unsigned char *)&cc2530_rec.len, cc2530_rec.len);
+//				if(crcRfCal((unsigned char *)&cc2530_rec.len, cc2530_rec.len)  == cc2530_rec.buffer[cc2530_rec.len - 2]){{
+//					cc2530_remote_rec_packet = *(NJZY_RF_STR*)(cc2530_rec.buffer);
+//					cc2530_rec_data_flag = 1;
+//				}
+//				cc2530_count = 0;
+//				buffer_count = 0;
+//				parse_step = HEAD1;
+//				return 0;
+//				}
+//			}
+//			break;
+//		default:
+//			cc2530_count = 0;
+//			buffer_count = 0;
+//			parse_step = HEAD1;
+//			return 0;
+//		}
+//		return 1;
+//}
