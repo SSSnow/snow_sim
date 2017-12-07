@@ -49,5 +49,7 @@ FLOAT_GYRO* get_gyro_unit(void);
 uint8_t get_gyro_acc_temp_raw(void);
 void cal_acc_uint(void);
 void cal_gyro_uint(void);
+bool gyro_peace(unsigned int imu_wait);
+uint8_t get_gyro_offset(void);
 
 #endif /* SRC_MIDDLEWARE_ACC_GYRO_TEMP_M_H_ */

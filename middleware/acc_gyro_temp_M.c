@@ -6,11 +6,13 @@
  */
 
 #include "acc_gyro_temp_M.h"
+#include "math.h"
 
 #define HALF_SQRT_2 0.707106781f
 
 FLOAT_GYRO gyroUnit = {0};
 GYRO_RAW_SHORT gyroRawShort = {0};
+GYRO_RAW_SHORT offset_gyro = {0};
 FLOAT_ACC accUnit = {0};
 ACC_RAW_SHORT accRawShort = {0};
 int16_t temperature_RAW = 0;
@@ -161,7 +163,6 @@ void ICM20602_GYRO_READ(void){
 //	return ret;
 //}
 
-
 FLOAT_ACC* get_acc_unit(void){
 
 	return &accUnit;
@@ -199,9 +200,9 @@ void cal_gyro_uint(void){
 	short gyroY_temp = 0;
 	short gyroZ_temp = 0;
 	
-	gyroX_temp = HALF_SQRT_2 * (gyroRawShort.gyroX - gyroRawShort.gyroY);
-	gyroY_temp = -HALF_SQRT_2 *  (gyroRawShort.gyroX + gyroRawShort.gyroY);
-	gyroZ_temp = -gyroRawShort.gyroZ;
+	gyroX_temp = HALF_SQRT_2 * ((gyroRawShort.gyroX -offset_gyro.gyroX) - (gyroRawShort.gyroY - offset_gyro.gyroY));
+	gyroY_temp = -HALF_SQRT_2 *  ((gyroRawShort.gyroX - offset_gyro.gyroY)+ (gyroRawShort.gyroY - offset_gyro.gyroY));
+	gyroZ_temp = -(gyroRawShort.gyroZ - offset_gyro.gyroZ);
 	
 //	gyroUnit.gyroX = (((float)gyroX_temp * gyro_range.scales) - gyro_scale.x_offset) * gyro_scale.x_scale;
 //	gyroUnit.gyroY = (((float)gyroY_temp * gyro_range.scales) - gyro_scale.y_offset) * gyro_scale.y_scale;
@@ -213,12 +214,73 @@ void cal_gyro_uint(void){
 }
 
 uint8_t PeaceDataCnt = 0, PeaceDataIndex = 0;
+uint8_t gyro_offset_flag = 0;
 
 #define BUF_SIZE 100
 
 static GYRO_RAW_SHORT GryPeaceBuf[BUF_SIZE] = {0};
 static ACC_RAW_SHORT  AccPeaceBuf[BUF_SIZE] = {0};
 float AccModelBuf[BUF_SIZE] = {0};
+
+
+bool gyro_peace(unsigned int imu_wait){
+	static GYRO_RAW_SHORT gyro_last = {0};
+	static uint32_t PeaceTimeCnt = 0;
+	static uint8_t CalibrationFlag = 0;
+	unsigned int turbulen = 0;
+	if(!get_gyro_raw())
+		return false;
+	turbulen = fabsf(gyroRawShort.gyroX - gyro_last.gyroX) + \
+			fabsf(gyroRawShort.gyroY - gyro_last.gyroY) + \
+			fabsf(gyroRawShort.gyroZ - gyro_last.gyroZ);
+	
+	gyro_last = gyroRawShort;
+	
+	if(turbulen < 20){
+		
+		if(PeaceTimeCnt < imu_wait){ // continue stable
+			PeaceTimeCnt ++;
+			return false;
+		}else{
+			if(CalibrationFlag == 0){
+				CalibrationFlag = 1;
+				offset_gyro.gyroX = gyro_last.gyroX;
+				offset_gyro.gyroY = gyro_last.gyroY;
+				offset_gyro.gyroZ = gyro_last.gyroZ;
+			}else{
+				if(PeaceDataCnt < BUF_SIZE){
+					GryPeaceBuf[PeaceDataCnt].gyroX = gyro_last.gyroX;
+					GryPeaceBuf[PeaceDataCnt].gyroY = gyro_last.gyroY;
+					GryPeaceBuf[PeaceDataCnt].gyroZ = gyro_last.gyroZ;
+					PeaceDataCnt ++;
+				}else{
+					GryPeaceBuf[PeaceDataIndex].gyroX = gyro_last.gyroX;
+					GryPeaceBuf[PeaceDataIndex].gyroY = gyro_last.gyroY;
+					GryPeaceBuf[PeaceDataIndex].gyroZ = gyro_last.gyroZ;
+					
+					if(PeaceDataIndex == BUF_SIZE)
+						PeaceDataIndex = 0;
+					
+					offset_gyro.gyroX = offset_gyro.gyroX * 0.9f + GryPeaceBuf[PeaceDataIndex].gyroX * 0.1f;
+					offset_gyro.gyroY = offset_gyro.gyroY * 0.9f + GryPeaceBuf[PeaceDataIndex].gyroY * 0.1f;
+					offset_gyro.gyroZ = offset_gyro.gyroZ * 0.9f + GryPeaceBuf[PeaceDataIndex].gyroZ * 0.1f;
+					gyro_offset_flag = 1;
+					
+				}
+			}
+		}
+		return true;
+	}else{
+		PeaceDataCnt = 0;
+		PeaceTimeCnt = 0;
+		PeaceDataIndex = 0;
+		return false;
+	}
+}
+
+uint8_t get_gyro_offset(void){
+	return gyro_offset_flag;
+}
 
 bool gyro_acc_Peace(unsigned int imu_wait){
 	//static bool get_imu_scale = false;

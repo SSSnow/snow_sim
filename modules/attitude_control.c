@@ -220,7 +220,7 @@ void task_1ms_int(void){
 		led_status_update();
 	}
 	//6 axis mode and 3 axis mode
-	if(get_fly_status()){
+	if(get_fly_status() && get_gyro_offset()){
 		control_ms ++;
 		if(control_ms == 4000000000) control_ms = 0;
 		if(get_control_mode()->control_attitude_enable){
@@ -302,7 +302,6 @@ void task_1ms_int(void){
 		}
 		
 		moto_pwm_output(Motor1,Motor2,Motor3,Motor4,get_flipped_status());
-		
 			
 	}else{ // fly disable
 		control_ms = 0;
@@ -312,6 +311,8 @@ void task_1ms_int(void){
 		pidRoll.ki = 0;
 		pidRollRate.ki = 0;
 		pidYawRate.ki = 0;
+		
+		gyro_peace(500);
 
 		if(IsFlipped())
 			moto_pwm_output(0.f,0.f,0.f,0.f,true);
